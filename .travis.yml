@@ -1,0 +1,64 @@
+# this CI only test C and C++ code
+sudo: required
+# C and C++ code will be only tested on this branch, before merge to master
+branches:
+  only:
+  - master
+  - dev
+
+matrix:
+  include:
+    # 64-bit gcc with C++17
+    - os: linux
+      dist: bionic
+      language: c++
+      addons:
+        apt:
+          packages:
+            - libboost-dev
+            - cmake
+            - g++-8
+      env:
+        - GCS_TAG=ubuntu_cpp17
+      install:
+        - echo "nothing is needed here, PWD = $PWD"
+      script:
+        # multi-line command ->
+        - mkdir build && cd build && cmake .. && make
+        - ./demo && ./MyTest
+
+    - os: linux
+      dist: xenial
+      language: c++
+      addons:
+        apt:
+          packages:
+            - libboost-dev
+            - cmake
+            - g++
+      env:
+        - GCS_TAG=ubuntu_cpp11
+      install:
+        - echo "nothing is needed here, PWD = $PWD"
+      script:
+        - mkdir build && cd build && cmake .. && make
+        - ./demo && ./MyTest
+
+    # 64-bit macos and llvm
+    - os: macos
+      dist: bionic
+      language: c++
+      addons:
+        apt:
+          packages:
+            - cmake
+            - g++
+      env:
+        - GCS_TAG=macos_llvm
+      install:
+        - echo "nothing is needed here, PWD = $PWD"
+      script:
+        # multi-line command
+        - mkdir build && cd build && cmake .. && make
+        - ./demo && ./MyTest
+
