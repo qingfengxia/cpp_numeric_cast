@@ -6,12 +6,12 @@ branches:
   - master
   - dev
 
+language: c++
 matrix:
   include:
     # 64-bit gcc with C++17
     - os: linux
       dist: bionic
-      language: c++
       addons:
         apt:
           packages:
@@ -23,13 +23,12 @@ matrix:
       install:
         - echo "nothing is needed here, PWD = $PWD"
       script:
-        # multi-line command ->
-        - mkdir build && cd build && cmake .. && make
+        # enable c++17 
+        - mkdir build && cd build && CMAKE_CXX_STANDARD=17 cmake .. && make
         - ./demo && ./MyTest
 
     - os: linux
       dist: xenial
-      language: c++
       addons:
         apt:
           packages:
@@ -46,13 +45,7 @@ matrix:
 
     # 64-bit macos and llvm
     - os: macos
-      dist: bionic
-      language: c++
-      addons:
-        apt:
-          packages:
-            - cmake
-            - g++
+      osx_image: xcode11.1
       env:
         - GCS_TAG=macos_llvm
       install:
