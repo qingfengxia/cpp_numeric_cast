@@ -1,9 +1,11 @@
 
 
-## Mini Library proposal:  to_signed() and to_unsigned() template methods
+## to_signed() and to_unsigned() template methods for safer numeric type conversion
 
 Qingfeng Xia, Copyright 2020
-Boost library license
+Boost Software License
+
+[![Build Status](https://travis-ci.org/qingfengxia/cpp_to_signed.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_to_signed.svg) 
 
 ## 1. Revision History
 
@@ -114,15 +116,27 @@ int i = std::to_signed<int>(f());
 
 ## Implementation
 
+`<type_traits> ` to limit source type to convert, so C++11 is a minimum requirement
+
+`<limits>`  for overflow detection
+
+The actual conversion is done by  **static_cast**<>  
+
+ **static_cast**,  cast if conversion exists, may and may not have compiler warning
+
+  **dynamic_cast**, for safe, runtime-checked casts of pointer-to-base to pointer-to-derived.
+
+  constness: input parameter as const? always create a new on the left. rvalue
+
+
+
 function naming follows `std::to_string<T>()`
 
 ### which standard header those functions should go?
 
-`<type_traits>  and <>` are used to implement those function.  
-
 `<stddef>` where `size_t` is defined, if it will not cause circular inclusion.
 
-### template parameter detection
+### Template parameter detection
 The return type must be the first template parameter, which must be specified. The second can be deduced from input parameter type.
 
 ```cpp
@@ -206,11 +220,7 @@ char8_t since C++20
 `std::to_integer<TargetIntType>(std::byte b)`
 
 6. enum  `std::byte` is a `enum class`,    2 step cast
-  **static_cast**,  cast if conversion exists, may and may not have compiler warning
-
-  **dynamic_cast**, for safe, runtime-checked casts of pointer-to-base to pointer-to-derived.
-
-  constness: input parameter as const? always create a new on the left. rvalue
+    
 
 7.  half precision float, standardized by IEEE754
 An open source version of half implemented has been incorporated into this project. 
@@ -229,17 +239,26 @@ An open source version of half implemented has been incorporated into this proje
 
 `std::to_address()`
 
-### performance impact
+### Performance impact
 
-exception overhead is regardly insignificant
+exception overhead is regarded insignificant in C++.
 C++17 `if constexpr ()` may reduce runtime 
 
-##  tested platforms Compiler support
+##  Tested platforms Compiler support
 
 Different OS: LP64 or LLP64 (windows), only 64bit
 CPU architecture, tested only on x86_64
 
-Table tested compiler and platforms by CI, using C++11 compiler
+Table 1: tested compiler and platforms by CI, using C++11 compiler
+
+| Platform                      | description | Compiler version | Result |
+| ----------------------------- | ----------- | ---------------- | ------ |
+| MacOS Xcode Travis CI         |             | Apple clang      |        |
+| Ubuntu 18.04 64bit  Travis CI | C++17       | G++ 8            |        |
+| Ubuntu 16.04 64bit  Travis CI | C++11       | G++ 5            |        |
+| Windows ?? Appvoyer CI        |             | visual studio    |        |
+
+
 
 
 ## Disclaimer and copyright 
@@ -247,7 +266,7 @@ Table tested compiler and platforms by CI, using C++11 compiler
 This project (code) is a personal contribution in personal time, it is not a work related/sponsored by my employer.
 
 Codes in this repository (except for lib in third-party lib) are licensed in
-Boost library license. It is free for open source and close source project.
+[Boost Software License](https://www.boost.org/users/license.html). It is free for open source and close source project.
 
 ==Contact== 
 

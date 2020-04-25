@@ -1,7 +1,12 @@
+/***********************************************************
+//              copyright Qingfeng Xia, 2020
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          https://www.boost.org/LICENSE_1_0.txt)
+************************************************************/
+
 /**
 * this is a header-only library
-* License as C++ library proposal: Boost Software License
-* copyright Qingfeng Xia, 2020
 */
 
 #pragma once
@@ -10,13 +15,6 @@
 #include <stdexcept> // for std::overflow_error
 #include <type_traits>
 
-/** TODO
- * template parameter deduction for input parameter type, done
- * constexpr, done
- * remove_cv
- * std::byte, done
- * enable_if, done
- * */
 
 /// it is safe to inject into std namespace
 namespace std {
@@ -47,10 +45,11 @@ namespace detail{
         typename std::enable_if<std::is_arithmetic<U>::value
         || detail::supports_arithmetic_operations<U>::value, int>::type = 0>
 #if __cplusplus >= 201703L
-    T constexpr to_signed(U unsigned_int)
+    T constexpr to_signed(const U unsigned_int)
 #else
-    T to_signed(U unsigned_int)
+    T to_signed(const U unsigned_int)
 #endif
+
     {
         if (unsigned_int > std::numeric_limits<T>::max())
         {
@@ -63,7 +62,7 @@ namespace detail{
 
     template <typename T, typename E, 
         typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
-    T to_signed(E e)
+    T to_signed(const E e)
     {
         typedef typename std::underlying_type<E>::type enum_under_type;
         int16_t b = static_cast<enum_under_type>(e);
@@ -77,7 +76,7 @@ namespace detail{
 
 #if __cplusplus >= 201703L
     template <typename T>
-    T to_signed(std::byte b)
+    T to_signed(const std::byte b)
     {
         int16_t v = static_cast<int16_t>(b);
         if (v > std::numeric_limits<T>::max())
@@ -99,7 +98,7 @@ namespace detail{
     /// source signed can be any arithetic type
     template  <typename T, typename S,
         typename enable_if<is_arithmetic<S>::value, int>::type = 0>
-    T to_unsigned(S signed_value)
+    T to_unsigned(const S signed_value)
     {
         if (signed_value > numeric_limits<T>::max())
         {
@@ -118,7 +117,7 @@ namespace detail{
 
     template  <typename T, typename E,
         typename enable_if<is_enum<E>::value, int>::type = 0>
-    T to_unsigned(E enum_value)
+    T to_unsigned(const E enum_value)
     {
         using enum_under_type = typename underlying_type<E>::type;
         enum_under_type value = static_cast<enum_under_type>(enum_value);
@@ -139,7 +138,7 @@ namespace detail{
     template <typename S, // enum and arithmetic
         typename std::enable_if<std::is_arithmetic<S>::value 
         || std::is_enum<S>::value, int>::type = 0>
-    std::byte to_unsigned(S signed_value)
+    std::byte to_unsigned(const S signed_value)
     {
         if (signed_value > std::numeric_limits<unsigned char>::max())
         {
