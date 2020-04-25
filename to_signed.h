@@ -14,12 +14,29 @@
  * template parameter deduction for input parameter type, done
  * constexpr, done
  * remove_cv
- * std::byte
- * enable_if
+ * std::byte, done
+ * enable_if, done
  * */
 
 /// it is safe to inject into std namespace
 namespace std {
+
+namespace detail{
+
+    template<class...> struct make_void { using type = void; };
+    template<class... Ts> using void_t = typename make_void<Ts...>::type;
+    
+    template<class T, class = void>
+    struct supports_arithmetic_operations : std::false_type {};
+    
+    template<class T>
+    struct supports_arithmetic_operations<T, 
+               void_t<decltype(std::declval<T>() + std::declval<T>()),
+                      decltype(std::declval<T>() - std::declval<T>()),
+                      decltype(std::declval<T>() * std::declval<T>()),
+                      decltype(std::declval<T>() / std::declval<T>())>> 
+           : std::true_type {};
+}
 
     /// usage `int s = to_signed<int>(size_t_type_integer);`, by auto template type  derivation,
     /// enable_if<is_unsigned<U>, is_floating_point<U>, is_enum<U>>
@@ -27,7 +44,8 @@ namespace std {
     /// target signed can be any arithmetic type, but should be signed integer
     /// to floating point is possible with lost precision
     template <typename T, typename U,
-        typename std::enable_if<std::is_arithmetic<U>::value, int>::type = 0>
+        typename std::enable_if<std::is_arithmetic<U>::value
+        || detail::supports_arithmetic_operations<U>::value, int>::type = 0>
 #if __cplusplus >= 201703L
     T constexpr to_signed(U unsigned_int)
 #else

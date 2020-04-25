@@ -40,7 +40,7 @@ matrix:
       install:
         - echo "nothing is needed here, PWD = $PWD"
       script:
-        - mkdir build && cd build && cmake .. && make
+        - mkdir build && cd build && CMAKE_CXX_STANDARD=11 cmake .. && make
         - ./demo && ./MyTest
 
     # 64-bit macos and llvm
@@ -49,6 +49,7 @@ matrix:
       env:
         - GCS_TAG=macos_llvm
       install:
+        # todo: boost
         - echo "nothing is needed here, PWD = $PWD"
       script:
         # multi-line command

@@ -147,14 +147,16 @@ enum E {E_0=0, E_9bit = 0x100, E_17bit = 0x10000, E_all_one=0xffffffff};
 enum class TE{E_0 =0, TE_9bit = 0x100, TE_17bit = 0x10000};
 // TE_all_one=0xffffffff for strong typed enum
 
-void test_enum()
+template<typename SourceType>
+void test_enum(std::string fname, SourceType enum_value)
 {
-    try{
-        unsigned char uc = std::to_unsigned<unsigned char>(E_9bit);
+    try
+    {
+        unsigned char uc = std::to_unsigned<unsigned char>(enum_value);
     }
     catch(std::overflow_error e)
     {
-        std::cout << " to_unsigned(enum) error : " << e.what() << '\n'; 
+        std::cout << fname << "(" << type_name<SourceType>() << ") has error : " << e.what() << '\n'; 
     }
 }
 
@@ -176,6 +178,9 @@ void test_type()
     static_assert(std::is_same<int, int32_t>::value);
 
     //static_assert(std::is_same<long, long long>::value); // failed!
+    // static_assert(std::is_same<int64_t, long>::value);
+    // failed on macos 'std::is_same<long long, long>::value'
+
     static_assert(std::is_same<int64_t, long>::value);
     static_assert(not std::numeric_limits<int>::has_infinity); 
     
@@ -193,14 +198,74 @@ void test_type()
     //static_assert(std::is_same<char16_t, int16_t>::value);
 }
 
+#include "third-party/half.hpp"
+
+void test_half()
+{
+    using namespace half_float;
+   //static_assert(std::is_arithmetic<half_float::half>::value);
+    int8_t v1 = std::to_signed<int8_t>(half{1});
+    try{
+        int8_t v1 = std::to_signed<int8_t>(half{1000});
+    }
+    catch(std::runtime_error e)
+    {
+        std::cout << "`std::to_signed<int8_t>(half{1000})` error : " << e.what() << '\n'; 
+    }
+}
+
+#if __cplusplus >= 201703L
+// `__has_include()` is only supported by C++17
+#if __has_include("boost/multiprecision/cpp_int.hpp")
+#include <boost/multiprecision/cpp_int.hpp>
+
+// this  may shared the general test_conversion()
+void test_boost_multiprecision()
+{
+   using namespace boost::multiprecision;
+
+   int128_t v = 1;
+   //static_assert(std::is_arithmetic<int128_t>::value);
+
+    try{
+        unsigned char uc = std::to_unsigned<unsigned char>(E_9bit);
+    }
+    catch(std::overflow_error e)
+    {
+        std::cout << " to_unsigned(enum) error : " << e.what() << '\n'; 
+    }
+
+}
+#endif
+#endif
+
+void test_implicit_conversion()
+{
+    const unsigned char uc = 1000.0;  // narrowing
+    if(uc == UCHAR_MAX)
+    {
+        std::cout << "big floating point value truncated to UCHAR_MAX = " 
+        << UCHAR_MAX << std::endl;
+    }
+
+    const unsigned char uc1 = 500;  // narrowing from int to uint8_t
+    std::cout << "const unsigned char uc1 = 500 gives uc1 = " << int(uc1) << std::endl;
+    if(uc1 == UCHAR_MAX)
+    {
+        std::cout << "big integer value truncated to UCHAR_MAX = " 
+        << UCHAR_MAX << std::endl;
+    }
+}
+
 int main()
 {
     std::cout << std::boolalpha;
 
-
     test_conversion<double, unsigned int>("to_unsigned");
     test_conversion<double, uint64_t>("to_unsigned");
     test_conversion<int64_t, bool>("to_unsigned");
+    // bool to unsigned or signal int are safe, is that must be 
+    static_assert(int(true) == 1);
     //test_conversion<int64_t, std::byte>("to_unsigned");
 
     test_conversion<double, int64_t>("to_signed");
@@ -208,8 +273,14 @@ int main()
 
     test_conversion<int32_t, char16_t>("to_unsigned");
 
-    test_enum();
+    test_enum("to_signed", E_9bit);
+
     test_byte();
+    test_half();
+#if __cplusplus >= 201703L
+    test_boost_multiprecision();
+#endif
+    test_implicit_conversion();
 
     unsigned char uc = std::to_unsigned<unsigned char>(1);
 
