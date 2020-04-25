@@ -37,17 +37,17 @@ namespace detail{
 }
 
     /// usage `int s = to_signed<int>(size_t_type_integer);`, by auto template type  derivation,
-    /// enable_if<is_unsigned<U>, is_floating_point<U>, is_enum<U>>
+    /// enable_if<is_unsigned<S>, is_floating_point<S>, is_enum<S>>
     /// target type must be integer, bool, floating point must have sign
     /// target signed can be any arithmetic type, but should be signed integer
     /// to floating point is possible with lost precision
-    template <typename T, typename U,
-        typename std::enable_if<std::is_arithmetic<U>::value
-        || detail::supports_arithmetic_operations<U>::value, int>::type = 0>
+    template <typename T, typename S,
+        typename std::enable_if<std::is_arithmetic<S>::value
+        || detail::supports_arithmetic_operations<S>::value, int>::type = 0>
 #if __cplusplus >= 201703L
-    T constexpr to_signed(const U unsigned_int)
+    T constexpr to_signed(const S unsigned_int)
 #else
-    T to_signed(const U unsigned_int)
+    T to_signed(const S unsigned_int)
 #endif
 
     {
@@ -97,7 +97,8 @@ namespace detail{
     /// target type must be unsigned integer,  not bool,  floating point must have sign
     /// source signed can be any arithetic type
     template  <typename T, typename S,
-        typename enable_if<is_arithmetic<S>::value, int>::type = 0>
+        typename enable_if<is_arithmetic<S>::value
+             || detail::supports_arithmetic_operations<S>::value, int>::type = 0>
     T to_unsigned(const S signed_value)
     {
         if (signed_value > numeric_limits<T>::max())
@@ -150,7 +151,7 @@ namespace detail{
             throw std::underflow_error(
                 "signed value less than zero should not be converted to std::byte");
         }
-        return std::byte{v};
+        return std::byte{signed_value};
     }
 
 #endif

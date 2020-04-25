@@ -129,6 +129,15 @@ The actual conversion is done by  **static_cast**<>
   constness: input parameter as const? always create a new on the left. rvalue
 
 
+### naming
+
+reuse the name "std::to_integer<>" safe range except for to `int8_t`
+```cpp
+  template<typename _IntegerType>
+    constexpr _IntegerType
+    to_integer(__byte_op_t<_IntegerType> __b) noexcept
+    { return _IntegerType(__b); }
+```
 
 function naming follows `std::to_string<T>()`
 

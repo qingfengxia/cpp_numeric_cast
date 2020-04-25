@@ -91,8 +91,9 @@ void test_conversion(std::string fn)
     const auto& target_name = type_name<TargetType>();
     std::string fname = std::string( fn + "<") + target_name + ">(" + source_name + ")" ;
 
-    std::cout << "============" << fname << "=================\n";
-    std::map<std::string, SourceType> values{
+    std::cout << "=========" << fname << "==============\n";
+    // code below causes compiling error for half, boost types
+    const std::map<std::string, SourceType> values{
         {source_name + std::string("max"), stype_max}, 
         {source_name  + std::string("min"), stype_min},
         {"generated overflow value", generate_overflow_value<TargetType>()},
@@ -104,9 +105,12 @@ void test_conversion(std::string fn)
         TargetType target_implicitly_converted = 0; 
         TargetType target_cast = 0;
         SourceType v = p.second;
+        if(not std::is_class<SourceType>::value)
+        {
         target_implicitly_converted = v;
-        std::cout << "implicitly convert floating point overflow value to unsigned int  = " 
+        std::cout << "implicitly convert  value to unsigned int  = " 
             << target_implicitly_converted<< '\n';
+        }
 
         try {
             if(fn == "to_unsigned")
@@ -147,12 +151,13 @@ void test_conversion(std::string fn)
 }
 
 enum E {E_0=0, E_9bit = 0x100, E_17bit = 0x10000, E_all_one=0xffffffff};
-enum class TE{E_0 =0, TE_9bit = 0x100, TE_17bit = 0x10000};
+enum class TE{TE_0 =0, TE_9bit = 0x100, TE_17bit = 0x10000};
 // TE_all_one=0xffffffff for strong typed enum
 
 template<typename SourceType>
 void test_enum(std::string fname, SourceType enum_value)
 {
+    std::cout << "=========" << "enum" << "==============\n";
     try
     {
         unsigned char uc = std::to_unsigned<unsigned char>(enum_value);
@@ -166,6 +171,7 @@ void test_enum(std::string fname, SourceType enum_value)
 void test_byte()
 {
 #if __cplusplus >= 201703L
+    std::cout << "=========" << "std::byte" << "==============\n";
     // implicitly conversion by assignment is not allowed from int to std::byte
     std::byte bb = static_cast<std::byte>(1);
     std::byte b{42};
@@ -227,11 +233,13 @@ void test_boost_multiprecision()
 {
    using namespace boost::multiprecision;
 
+   static_assert(std::detail::supports_arithmetic_operations<int128_t>::value);
    int128_t v = 1;
    //static_assert(std::is_arithmetic<int128_t>::value);
 
+   // int i = std::to_integer<int>(1.2);
     try{
-        unsigned char uc = std::to_unsigned<unsigned char>(E_9bit);
+        unsigned char uc = std::to_unsigned<unsigned char>(int128_t{1}); // todo
     }
     catch(std::overflow_error e)
     {
@@ -271,22 +279,31 @@ int main()
     static_assert(int(true) == 1);
     //test_conversion<int64_t, std::byte>("to_unsigned");
 
+    test_conversion<uint64_t, float>("to_unsigned");
     test_conversion<double, int64_t>("to_signed");
     test_conversion<uint32_t, int16_t>("to_signed");
 
     test_conversion<int32_t, char16_t>("to_unsigned");
 
-    test_enum("to_signed", E_9bit);
+
+    //test_enum("to_signed", E_9bit);
+    test_enum("to_signed", TE::TE_9bit);
+    //E e_cast = std::to_unsigned<E>(TE::TE_9bit);  // runtime_error error, why?
 
     test_byte();
     test_half();
+    //test_conversion<half_float::half, char16_t>("to_unsigned");
 #if __cplusplus >= 201703L
-    test_boost_multiprecision();
+    test_boost_multiprecision();  // not working
 #endif
     test_implicit_conversion();
+    //test_conversion<boost::multiprecision::int128_t, char16_t>("to_unsigned");  
 
-    unsigned char uc = std::to_unsigned<unsigned char>(1);
+    int i_value = 1;
+    int& i_ref = i_value;
+    unsigned char uc = std::to_unsigned<unsigned char>(i_ref);
 
+    std::cout << "============= demo completed ============\n";
     return 0;
 
 }
