@@ -2,64 +2,104 @@
 
 ## Mini Library proposal:  to_signed() and to_unsigned() template methods
 
-Qingfeng Xia
-
-Senior Research Software Engineer
-
-United Kingdom Atomic Energy Authority
-
-Culham Science Centre
-
-Abingdon Oxfordshire
-
-OX14 3DB
-
-United Kingdom
-
-Email: qingfeng.xia@gmail.com
+Qingfeng Xia, Copyright 2020
+Boost library license
 
 ## 1. Revision History
 
 ## 2. Motivation
 
-1. runtime arithmetic type conversion underflow/overflow safety in critical scenario,  
+1. a portable way to suppress compiler warning on conversion
 
-2. portable way to suppress compiler warning
+From size_t, returned by STL container lib to signed integer for some arithmetic operation is a common operation, but there is compiler warning. 
+``` cpp
+int i = myVector.size() - 100;
+```
 
-https://thephd.github.io/portfolio/standard
+`int i = static_cast<int> ( myVector.size() - 100);` can suppress this warning, but
+if `myVector.size() -100 > INT_MAX` in big data application, then the result is not what we want.
 
+Another example, from signed integer to STL container index
 
-3. CFFI:  javascript and matlab wrapping, there is only double type integer, even array index is double type, 
+```cpp
+#include <iostream>
+#include <vector>
+int f() { return -1; };
+int main()
+{
+    auto myVector = std::vector<int> {1, 2, 3};
+    int i = f(); // runtime value can be -1
+    std::cout << "myVector[i] = " << myVector[i] << std::endl;
+    return 0;
+}
+```
 
-`narrow()`
+2. to throw runtime exception for arithmetic type conversion underflow/overflow  in critical scenario. 
 
+```cpp
+// there is a compiler warning "overflow" for constant assignment 
+target_implicitly_converted = std::numeric_limits<TargetType>::max() + 1.0;
+std::cout << "implicitly assigned an overflow value to unsigned int  = " 
+    << target_implicitly_converted<< '\n';
+// for function return not even a warning
+target_implicitly_converted = generate_overflow_value();
+```
 
-#### Integral promotion
+3. foreign function interface (FFI)
+For example, javascript has only double type integer, even array index is double type. It must be convert to unsigned int in C/C++ side.  It is kind of unsafe `narrow`, in contrast of from safe numeric promotion.
 
-minus int to bool? specialized or disable!
+#### Integral promotion and conversion
 
-float -> int, truncating not rounding
+see external link: 
+uint32_t to int64_t is safe, the latter one has range covering the previous one, conersion happens without compiler warning. 
 
+uint32_t to int32_t is not safe, overflow can happen. it is conversion with compiler warning.
+
+float -> int, if float_value > INT_MAX, set the int_value to INT_MAX.
 int -> float: IEEE rounding if EEE arithmetic is supported, 
 
 ## 3. Rationale
 
 ### fail-fast: for type conversion, for safety scientific computation.  
 
-Java: does not care about integer overflow, during conversion?
-https://stackoverflow.com/questions/3001836/how-does-java-handle-integer-underflows-and-overflows-and-how-would-you-check-fo
+C# `checked` integer overflow. 
 
-### C++ safe computation lib: 
-decimal library, Java.BigInteger 
-
-```cpp
-bool is_safe_addition(uint32_t a, uint32_t b) {
-    size_t a_bits=highestOneBitPosition(a), b_bits=highestOneBitPosition(b);
-    return (a_bits<32 && b_bits<32);
+```cs
+byte value = 240;
+try
+{
+    checked
+    {
+        value += 24;
+    }
+}
+catch (OverflowException e)
+{
+    // handle overflow, get overflow count via % etc.
 }
 ```
 
-CPU set status
+https://stackoverflow.com/questions/3001836/how-does-java-handle-integer-underflows-and-overflows-and-how-would-you-check-fo
+
+### C++ safe arithmetic computation lib
+
+The easy way to avoid overflow is to use number types with unlimited value range like python3 integer,  at the cost of longer computation time. CPU are designed to compile arithmetic operation on fixed bit length data quickly, usually in one CPU pulse time. 
+
+C++ does not have multiprecision integer support like Java or C# BigInteger,  but boost has `boost::multiprecision::cpp_int<>` has the template parameter to control runtime exception **checked** or not. For the checked types, `std::overflow_error` or `range_error` will be thrown at runtime, instead of sliently set the result as the modulo to the max value. see more details <https://www.boost.org/doc/libs/1_71_0/libs/multiprecision/doc/html/boost_multiprecision/tut/ints/cpp_int.html>
+
+There are alias to the fixed bit length and unchecked `cpp_int<>` template class, `int128_t, uint128_t, ..., uint1024_t`, those are unchecked, which have the same hehavriour as C/c++ build type `uint32_t`. Meanwhile, checked version are named as `checked_uint128_t`. 
+
+Boost multiprecision library also have binary and decimal floating point number such as `float128`
+
+### Hardware support of overflow
+
+CPU (x86) will set status register for integer overflow/underflow, however, it is ignored in computation normally. C++ compiler may has feature to react on this condition as "-ftrapv", which is turned off by default for performance reason. 
+see the example code at <https://gist.github.com/mastbaum/1004768>
+
+Similarly,  floating point computation hardware (FPU) may signal for NAN result. This is done by C standard library `<fenv.h>`, floating-point status flags `fexcept_t` (it is not C++ exception class)	will be set and can be tested by bit and operation, see example usage <https://en.cppreference.com/w/cpp/numeric/fenv/feraiseexcept>. Alternatively, those status can be translated into runtime C++ exception if enabled by compiler specific switch see <https://en.cppreference.com/w/cpp/numeric/fenv>
+
+There are compiler extensions that may be used to generate C++ exceptions automatically whenever a floating-point exception is raised:
+
 
 ## header-only usage
 
@@ -74,19 +114,16 @@ int i = std::to_signed<int>(f());
 
 ## Implementation
 
-function naming `std::to_string<>()`
+function naming follows `std::to_string<T>()`
 
-### where to put
-It is not compiling time check like functions in <type_traits>  
+### which standard header those functions should go?
 
- <stddef> where size_t is defined, circular inclusion problem
+`<type_traits>  and <>` are used to implement those function.  
 
-double -> float will not use this function, but without report error
-
-is `long long` and `long` same type no ?
+`<stddef>` where `size_t` is defined, if it will not cause circular inclusion.
 
 ### template parameter detection
-return type must be the first template parameter, which must be specified. The second can be deduced.
+The return type must be the first template parameter, which must be specified. The second can be deduced from input parameter type.
 
 ```cpp
 template <typename R, typename P>
@@ -103,20 +140,51 @@ int main()
 ```
 
 ### Target types
-1. integral and floating point
-2. std::byte
-3. enum:  magic_enum<E> to check max value
-4. char types: unsigned integer
+1. integral , floating point , char types: unsigned integer,  any class support `std::numeric_limits<T>`
+
+Customized classes, half float as well as built-in floating point types are signed types. boost multiple precision types have both signed and unsigned version depends on template parameter given.
+
+2. `std::byte` introduced in C++17
+template specialization has been implemented to support
+`TargetType t = to_signed<TargetType>(std::byte b)` 
+`std::byte b = to_unsigned<SourceType>(SourceType value)`
+
+3. enum and enum class (c++11):   
+ use different name `to_enum<>()` instead of `to_unsigned()`
+
+ enum's default underlying integer type is `unsigned int` in C++
+`to_enum<>()` should also translate different enum types.
+
+Consider using `magic_enum<E>` to check if an enum value valid, instead of checking overflow by `std::numeric_limits<underlying_integer_type>`
+
+> enum value is valid in C++ if it falls in range [A, B], which is defined by the standard rule below. So in case of enum X { A = 1, B = 3 }, the value of 2 is considered a valid enum value.  see more "7.2/6 of standard"
+
+4. bool:  a special arithmetic unsigned type in C++
+`is_unsigned<bool>::value == true`  and `is_arithmetic<bool>::value == true`
+The bool type should NOT used in `to_unsigned`. Meanwhile, common types to bool conversion is well defined in C++ standard [ref??]()
+`explicit bool operator ()`
 
 consider:  limited the target by `std::enable_if<std::is_signed<>::value, int>::value = 0` for `to_signed<>()`
 
 ###  Accepted source types
-1. concern on floating point overflow
 
-float to integer is possible, rounding to nearest if IEEE standard is supported
+built-in types `is_arithmetic<T>` or user defined class support arithmetic operations.
 
-`numeric_limit<double>::is_iec559()`		true if the type adheres to IEC-559 / IEEE-754 standard.
+There are five integer types, is `long long` and `long` same type? NO on ubuntu x86-64. 
+
+1. floating point to integer
+
+double -> float will not use this function, but without report error
+float to integer is possible, rounding to nearest if IEEE standard is supported. 
+
+`numeric_limit<double>::is_iec559()` is true if the type adheres to IEC-559 / IEEE-754 standard.
 > An IEC-559 type always has has_infinity, has_quiet_NaN and has_signaling_NaN set to true; And infinity, quiet_NaN and signaling_NaN return some non-zero value.
+
+`is_arithmetic<>` return true type for customized type is not strait-forward, however, a new type_trait `support_arithmetic<>` can be declared as suggested
+<https://stackoverflow.com/questions/26434128/how-to-make-is-arithmeticmyclassvalue-to-be-true>
+
+bool to unsigned or signal int are safe, is that must be 
+ static_assert(int(true) == 1);
 
 2. char types: `std::is_integral<char16_t>::value  == true`
 They are included in <limits>, so they must be implemented.
@@ -144,8 +212,17 @@ char8_t since C++20
 
   constness: input parameter as const? always create a new on the left. rvalue
 
+7.  half precision float, standardized by IEEE754
+An open source version of half implemented has been incorporated into this project. 
+`numeric_limits<T>`
+
+`to_unsigned<>` is prefered over `half_cast<>` for the same API to deal with all source type. 
+
+8. boost: multiple precision integer and decimal
+`cpp_int<>` and `cpp_dec_float<>` can `std::range_error` for checked version
+
 ### not supported source types
-1. pointer (unsigned long) but different type
+1. pointer (has the same byte size as `unsigned long int`) but it is a different type.
 
 `reinterpret_cast<int>(&var)` not safe, address is bigger than int
 `static_cast<unsigned long>(&var);` only make sense to `unsigned long`
@@ -154,24 +231,36 @@ char8_t since C++20
 
 ### performance impact
 
- exception performance
+exception overhead is regardly insignificant
+C++17 `if constexpr ()` may reduce runtime 
 
 ##  tested platforms Compiler support
 
-OS difference: LP64 or LLP64 (windows), 32bit or 64bit
+Different OS: LP64 or LLP64 (windows), only 64bit
 CPU architecture, tested only on x86_64
 
-Table tested compiler and platforms by CI
-C++11 compiler
+Table tested compiler and platforms by CI, using C++11 compiler
 
 
-## Disclaimer of copyright 
+## Disclaimer and copyright 
 
-Boost license
-It is free for **open-source** projects and could be easily integrated with GitHub and BitBucket.
+This project (code) is a personal contribution in personal time, it is not a work related/sponsored by my employer.
+
+Codes in this repository (except for lib in third-party lib) are licensed in
+Boost library license. It is free for open source and close source project.
+
+==Contact== 
+
+Qingfeng Xia
+Senior Research Software Engineer
+United Kingdom Atomic Energy Authority
+Culham Science Centre, Abingdon Oxfordshire 
+OX14 3DB
+United Kingdom
+Email: qingfeng.xia(a)gmail
 
 ## References
 
 [1] implicit conversion https://docs.microsoft.com/en-us/cpp/cpp/type-conversions-and-type-safety-modern-cpp?view=vs-2019
 
-[2] 
+[2] to add more
