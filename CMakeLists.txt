@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 # comment this out, if later used as add_subdirectory()
 project(CppToSigned)
 
-set(PROJECT_BRIEF "provide std::to_signed(), and std::to_unsigned template functions for C++,  by Qingfeng Xia")
+set(PROJECT_BRIEF "provide std::to_integer(), and std::to_unsigned template functions for C++,  by Qingfeng Xia")
 #project version definition
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #############################################################
 
-add_executable(MyTest "tests/test_to_signed.cpp")
+add_executable(MyTest "tests/test_to_integer.cpp")
 
 ##############################################################
 set(MyDemo "demo")

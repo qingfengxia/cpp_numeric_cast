@@ -11,7 +11,7 @@
 #include <map>
 #include <cstddef>
 
-#include "to_signed.h"
+#include "to_integer.h"
 
 // typeid().name() of g++ does not given full type name
 #include "third-party/type_name.h"
@@ -62,8 +62,8 @@ void test_conversion_inf_nan(std::string fn)
         }
         else
         {
-            target_cast_inf = std::to_signed<TargetType, SourceType>(inf_value);
-            target_cast_nan = std::to_signed<TargetType, SourceType>(nan_value);
+            target_cast_inf = std::to_integer<TargetType, SourceType>(inf_value);
+            target_cast_nan = std::to_integer<TargetType, SourceType>(nan_value);
         }
         
         std::cout << fname << " inf  = " << target_cast_inf<< '\n'; 
@@ -115,9 +115,9 @@ void test_conversion(std::string fn)
         try {
             if(fn == "to_unsigned")
                 target_cast = std::to_unsigned<TargetType, SourceType>(v); 
-            else if (fn == "to_signed")
+            else if (fn == "to_integer")
             {
-                target_cast = std::to_signed<TargetType, SourceType>(v); 
+                target_cast = std::to_integer<TargetType, SourceType>(v); 
             }
             else
             {
@@ -176,7 +176,7 @@ void test_byte()
     std::byte bb = static_cast<std::byte>(1);
     std::byte b{42};
     std::cout << std::to_integer<int>(b) << "\n";
-    //std::cout << std::to_signed<int, std::byte>(std::byte{40}) << "\n";
+    //std::cout << std::to_integer<int, std::byte>(std::byte{40}) << "\n";
     //std::numeric_limits<T> does not support `std::byte`
     //std::byte bc = std::to_unsigned<std::byte>(1);  
 #endif
@@ -213,13 +213,13 @@ void test_half()
 {
     using namespace half_float;
    //static_assert(std::is_arithmetic<half_float::half>::value);
-    int8_t v1 = std::to_signed<int8_t>(half{1});
+    int8_t v1 = std::to_integer<int8_t>(half{1});
     try{
-        int8_t v1 = std::to_signed<int8_t>(half{1000});
+        int8_t v1 = std::to_integer<int8_t>(half{1000});
     }
     catch(std::runtime_error e)
     {
-        std::cout << "`std::to_signed<int8_t>(half{1000})` error : " << e.what() << '\n'; 
+        std::cout << "`std::to_integer<int8_t>(half{1000})` error : " << e.what() << '\n'; 
     }
 }
 
@@ -280,14 +280,14 @@ int main()
     //test_conversion<int64_t, std::byte>("to_unsigned");
 
     test_conversion<uint64_t, float>("to_unsigned");
-    test_conversion<double, int64_t>("to_signed");
-    test_conversion<uint32_t, int16_t>("to_signed");
+    test_conversion<double, int64_t>("to_integer");
+    test_conversion<uint32_t, int16_t>("to_integer");
 
     test_conversion<int32_t, char16_t>("to_unsigned");
 
 
-    //test_enum("to_signed", E_9bit);
-    test_enum("to_signed", TE::TE_9bit);
+    //test_enum("to_integer", E_9bit);
+    test_enum("to_integer", TE::TE_9bit);
     //E e_cast = std::to_unsigned<E>(TE::TE_9bit);  // runtime_error error, why?
 
     test_byte();

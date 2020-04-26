@@ -1,11 +1,11 @@
 
 
-## to_signed() and to_unsigned() template methods for safer numeric type conversion
+## to_integer() and to_unsigned() template methods for safer numeric type conversion
 
 Qingfeng Xia, Copyright 2020
 Boost Software License
 
-[![Build Status](https://travis-ci.org/qingfengxia/cpp_to_signed.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_to_signed.svg) 
+[![Build Status](https://travis-ci.org/qingfengxia/cpp_to_integer.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_to_integer.svg) 
 
 ## 1. Revision History
 
@@ -106,10 +106,10 @@ There are compiler extensions that may be used to generate C++ exceptions automa
 ## header-only usage
 
 ```cpp
-#include "to_signed.h"
+#include "to_integer.h"
 
 size_t f() { return 0xffffffffff; }
-int i = std::to_signed<int>(f());
+int i = std::to_integer<int>(f());
 // std::overflow_error will throw here
 
 ```
@@ -169,7 +169,7 @@ Customized classes, half float as well as built-in floating point types are sign
 
 2. `std::byte` introduced in C++17
 template specialization has been implemented to support
-`TargetType t = to_signed<TargetType>(std::byte b)` 
+`TargetType t = to_integer<TargetType>(std::byte b)` 
 `std::byte b = to_unsigned<SourceType>(SourceType value)`
 
 3. enum and enum class (c++11):   
@@ -187,7 +187,7 @@ Consider using `magic_enum<E>` to check if an enum value valid, instead of check
 The bool type should NOT used in `to_unsigned`. Meanwhile, common types to bool conversion is well defined in C++ standard [ref??]()
 `explicit bool operator ()`
 
-consider:  limited the target by `std::enable_if<std::is_signed<>::value, int>::value = 0` for `to_signed<>()`
+consider:  limited the target by `std::enable_if<std::is_signed<>::value, int>::value = 0` for `to_integer<>()`
 
 ###  Accepted source types
 

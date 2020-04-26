@@ -36,7 +36,7 @@ namespace detail{
            : std::true_type {};
 }
 
-    /// usage `int s = to_signed<int>(size_t_type_integer);`, by auto template type  derivation,
+    /// usage `int s = to_integer<int>(size_t_type_integer);`, by auto template type  derivation,
     /// enable_if<is_unsigned<S>, is_floating_point<S>, is_enum<S>>
     /// target type must be integer, bool, floating point must have sign
     /// target signed can be any arithmetic type, but should be signed integer
@@ -45,38 +45,48 @@ namespace detail{
         typename std::enable_if<std::is_arithmetic<S>::value
         || detail::supports_arithmetic_operations<S>::value, int>::type = 0>
 #if __cplusplus >= 201703L
-    T constexpr to_signed(const S unsigned_int)
+    T constexpr to_integer(const S value)
 #else
-    T to_signed(const S unsigned_int)
+    T to_integer(const S value)
 #endif
-
     {
-        if (unsigned_int > std::numeric_limits<T>::max())
+        if (value > std::numeric_limits<T>::max())
         {
             throw std::overflow_error(
-                "input value overflow the target type");
+                "input value overflows the target type");
         }
-
-        return static_cast<T>(unsigned_int);
+        if (value < std::numeric_limits<T>::min())
+        {
+            // todo: message
+            throw underflow_error(
+                "input value underflows the target type");
+        }
+        return static_cast<T>(value);
     }
 
     template <typename T, typename E, 
         typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
-    T to_signed(const E e)
+    T to_integer(const E e)
     {
         typedef typename std::underlying_type<E>::type enum_under_type;
-        int16_t b = static_cast<enum_under_type>(e);
+        enum_under_type b = static_cast<enum_under_type>(e);
         if (b > std::numeric_limits<T>::max())
         {
             throw std::overflow_error(
-                "input value overflow the target type");
+                "input enum as an integer value overflows the target type");
+        }
+        if (b < std::numeric_limits<T>::min())
+        {
+            // todo: message
+            throw underflow_error(
+                "input enum as an integer value underflows the target type");
         }
         return static_cast<T>(e);
     }
 
-#if __cplusplus >= 201703L
-    template <typename T>
-    T to_signed(const std::byte b)
+#if 0 && __cplusplus >= 201703L
+    template <typename T>  // confliction with <cstddef>
+    T to_integer(const std::byte b)
     {
         int16_t v = static_cast<int16_t>(b);
         if (v > std::numeric_limits<T>::max())
@@ -90,8 +100,8 @@ namespace detail{
 #endif
 
     /// std::decay<>, remove reference, remove_cv()
-    //template< typename T, typename U> std::string to_signed( const U& unsigned_int) 
-    //{ return to_signed<T, U>(unsigned_int) ; }
+    //template< typename T, typename U> std::string to_integer( const U& unsigned_int) 
+    //{ return to_integer<T, U>(unsigned_int) ; }
 
     /// usage `size_t s = to_unsigned(any_signed_integer);`, by auto template type  derivation
     /// target type must be unsigned integer,  not bool,  floating point must have sign
@@ -114,7 +124,7 @@ namespace detail{
         return static_cast<T>(signed_value);
     }
     //template< typename T, typename U> std::string to_unsigned( const U& unsigned_int) 
-    //{ return to_signed<T, U>(unsigned_int) ; }
+    //{ return to_integer<T, U>(unsigned_int) ; }
 
     template  <typename T, typename E,
         typename enable_if<is_enum<E>::value, int>::type = 0>
@@ -155,12 +165,14 @@ namespace detail{
     }
 
 #endif
-    // enum_cast?
+    // a new name as enum_cast?
     template <typename E, typename S, 
         typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
-    E to_enum(S value)
+    E to_enum(const S value)
     {
         using enum_under_type = typename std::underlying_type<E>::type;
+        const enum_under_type enum_value = to_integer<enum_under_type>(value);
+        /*
         if (value > std::numeric_limits<enum_under_type>::max())
         {
             throw std::overflow_error(
@@ -171,7 +183,8 @@ namespace detail{
             throw std::underflow_error(
                 "signed value less than zero should not be converted to std::byte");
         }
-        return E{};
+        */
+        return E{enum_value};  /// enum is not validated for existence!
     }
 
 }
