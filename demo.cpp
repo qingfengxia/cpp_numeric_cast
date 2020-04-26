@@ -186,11 +186,15 @@ void test_type()
 {
     static_assert(std::is_same<int, int32_t>::value);
 
+    // bool to unsigned or signal int are safe, is that must be 
+    static_assert(static_cast<int>(true) == 1);  
+    // int(true) == 1 failed on g++ 5
+
     //static_assert(std::is_same<long, long long>::value); // failed!
     // static_assert(std::is_same<int64_t, long>::value);
     // failed on macos 'std::is_same<long long, long>::value'
 
-    static_assert(std::is_same<int64_t, long>::value);
+    //static_assert(std::is_same<int64_t, long>::value); // failed on macos
     static_assert(not std::numeric_limits<int>::has_infinity); 
     
     static_assert(std::is_signed<double>::value); // true for floating point
@@ -275,16 +279,12 @@ int main()
     test_conversion<double, unsigned int>("to_unsigned");
     test_conversion<double, uint64_t>("to_unsigned");
     test_conversion<int64_t, bool>("to_unsigned");
-    // bool to unsigned or signal int are safe, is that must be 
-    static_assert(int(true) == 1);
     //test_conversion<int64_t, std::byte>("to_unsigned");
+    test_conversion<int32_t, char16_t>("to_unsigned");
 
     test_conversion<uint64_t, float>("to_unsigned");
     test_conversion<double, int64_t>("to_integer");
     test_conversion<uint32_t, int16_t>("to_integer");
-
-    test_conversion<int32_t, char16_t>("to_unsigned");
-
 
     //test_enum("to_integer", E_9bit);
     test_enum("to_integer", TE::TE_9bit);
