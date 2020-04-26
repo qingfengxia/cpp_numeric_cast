@@ -7,6 +7,9 @@ Boost Software License
 
 [![Build Status](https://travis-ci.org/qingfengxia/cpp_to_integer.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_to_integer.svg) 
 
+
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/lkpn62t55wfie52t?svg=true)](https://ci.appveyor.com/project/qingfengxia/cpp-to-integer)
+
 ## 1. Revision History
 
 ## 2. Motivation
@@ -116,34 +119,42 @@ int i = std::to_integer<int>(f());
 
 ## Implementation
 
+Header files required:
 `<type_traits> ` to limit source type to convert, so C++11 is a minimum requirement
-
-`<limits>`  for overflow detection
+`<limits>`  for overflow detection, get the target type min() and `max()`
+`<stdexcept>`  for standard exceptions 
 
 The actual conversion is done by  **static_cast**<>  
 
  **static_cast**,  cast if conversion exists, may and may not have compiler warning
 
-  **dynamic_cast**, for safe, runtime-checked casts of pointer-to-base to pointer-to-derived.
+ **dynamic_cast**, for safe, runtime-checked casts of pointer-to-base to pointer-to-derived.
 
-  constness: input parameter as const? always create a new on the left. rvalue
-
+ The source value will not be modified, this function will always create a new value of the target type.
 
 ### naming
 
-reuse the name "std::to_integer<>" safe range except for to `int8_t`
+reuse the name `std::to_integer<>(std::byte)`. 
+From `std::byte` to integer is safe except for to `int8_t`. 
 ```cpp
   template<typename _IntegerType>
     constexpr _IntegerType
     to_integer(__byte_op_t<_IntegerType> __b) noexcept
     { return _IntegerType(__b); }
 ```
+It is proposed to modify this `std::to_integer<>(std::byte)` to check for the `int8_t` special case.
 
 function naming follows `std::to_string<T>()`
+
+
+`to_enum<>()` or `enum_cast<>()`
+
+`to_floating_point<>()`, is not quite necessary
 
 ### which standard header those functions should go?
 
 `<stddef>` where `size_t` is defined, if it will not cause circular inclusion.
+`<utility>`
 
 ### Template parameter detection
 The return type must be the first template parameter, which must be specified. The second can be deduced from input parameter type.
@@ -193,7 +204,16 @@ consider:  limited the target by `std::enable_if<std::is_signed<>::value, int>::
 
 built-in types `is_arithmetic<T>` or user defined class support arithmetic operations.
 
-There are five integer types, is `long long` and `long` same type? NO on ubuntu x86-64. 
+There are five signed integer types, `long long` and `long` are different type? at least on ubuntu x86-64. 
+
+`static_assert(not std::is_arithmetic<int&>::value);`  it is illegal to supply reference as the target type. In source type/input parameter type can be the value type or reference to the value type with and without volatile and const qualifier.
+
+```cpp
+    const int c_value = 1;
+    unsigned char uc_c = std::to_integer<unsigned char>(c_value);
+    const int& c_ref = c_value;
+    unsigned char uc_cref = std::to_integer<unsigned char>(c_ref);
+```
 
 1. floating point to integer
 
@@ -246,7 +266,7 @@ An open source version of half implemented has been incorporated into this proje
 `reinterpret_cast<int>(&var)` not safe, address is bigger than int
 `static_cast<unsigned long>(&var);` only make sense to `unsigned long`
 
-`std::to_address()`
+`std::to_address()` works for raw pointer and smart pointer classes
 
 ### Performance impact
 
@@ -267,7 +287,8 @@ Table 1: tested compiler and platforms by CI, using C++11 compiler
 | Ubuntu 16.04 64bit  Travis CI | C++11       | G++ 5            |        |
 | Windows ?? Appvoyer CI        |             | visual studio    |        |
 
-
+Visual studio C++ version macro
+https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=vs-2019
 
 
 ## Disclaimer and copyright 

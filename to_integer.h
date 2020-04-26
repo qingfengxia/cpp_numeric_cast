@@ -34,20 +34,15 @@ namespace detail{
                       decltype(std::declval<T>() * std::declval<T>()),
                       decltype(std::declval<T>() / std::declval<T>())>> 
            : std::true_type {};
-}
 
-    /// usage `int s = to_integer<int>(size_t_type_integer);`, by auto template type  derivation,
-    /// enable_if<is_unsigned<S>, is_floating_point<S>, is_enum<S>>
-    /// target type must be integer, bool, floating point must have sign
-    /// target signed can be any arithmetic type, but should be signed integer
-    /// to floating point is possible with lost precision
+ 
     template <typename T, typename S,
         typename std::enable_if<std::is_arithmetic<S>::value
-        || detail::supports_arithmetic_operations<S>::value, int>::type = 0>
+        || supports_arithmetic_operations<S>::value, int>::type = 0>
 #if __cplusplus >= 201703L
-    T constexpr to_integer(const S value)
+    T constexpr to_value(const S value)
 #else
-    T to_integer(const S value)
+    T to_value(const S value)
 #endif
     {
         if (value > std::numeric_limits<T>::max())
@@ -63,9 +58,31 @@ namespace detail{
         }
         return static_cast<T>(value);
     }
+}
+
+    /// convert to built-in arithmetic type and half, boost::multiprecision::int128_t
+    template <typename T, typename S, 
+        typename std::enable_if<std::is_arithmetic<T>::value
+        || detail::supports_arithmetic_operations<T>::value, int>::type = 0>
+    T to_value(const S v)
+    {
+        return detail::to_value<T, S>(v);
+    }
+
+    /// usage `int s = to_integer<int>(value);`, by auto template type derivation,
+    /// target type must be integer, bool, floating point must have sign
+    /// target signed can be any arithmetic type, but should be signed integer
+    /// to floating point is possible with lost precision
+    template <typename T, typename S, 
+        typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+    T to_integer(const S v)
+    {
+        return detail::to_value<T, S>(v);
+    }
 
     template <typename T, typename E, 
-        typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
+        typename std::enable_if<std::is_enum<E>::value
+        && std::is_integral<T>::value, int>::type = 0>
     T to_integer(const E e)
     {
         typedef typename std::underlying_type<E>::type enum_under_type;
@@ -84,9 +101,10 @@ namespace detail{
         return static_cast<T>(e);
     }
 
+// confliction with <cstddef> in C++17
 #if 0 && __cplusplus >= 201703L
-    template <typename T>  // confliction with <cstddef>
-    T to_integer(const std::byte b)
+    template <typename T>  
+    T to_integer(const std::byte b) throw
     {
         int16_t v = static_cast<int16_t>(b);
         if (v > std::numeric_limits<T>::max())
@@ -98,10 +116,6 @@ namespace detail{
     }
 
 #endif
-
-    /// std::decay<>, remove reference, remove_cv()
-    //template< typename T, typename U> std::string to_integer( const U& unsigned_int) 
-    //{ return to_integer<T, U>(unsigned_int) ; }
 
     /// usage `size_t s = to_unsigned(any_signed_integer);`, by auto template type  derivation
     /// target type must be unsigned integer,  not bool,  floating point must have sign

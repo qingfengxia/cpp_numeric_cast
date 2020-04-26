@@ -13,6 +13,8 @@
 
 #include "to_integer.h"
 
+//todo: turn off -Wunused-variable
+
 // typeid().name() of g++ does not given full type name
 #include "third-party/type_name.h"
 
@@ -80,8 +82,9 @@ void test_conversion_inf_nan(std::string fn)
     }
 }
 
+/// SourceType as the first template parameter, target as the second
 template <typename SourceType, typename TargetType>
-void test_conversion(std::string fn)
+void test_conversion(const std::string fn)
 {
     SourceType stype_max = std::numeric_limits<SourceType>::max();
     SourceType stype_min = std::numeric_limits<SourceType>::min();
@@ -108,20 +111,27 @@ void test_conversion(std::string fn)
         if(not std::is_class<SourceType>::value)
         {
         target_implicitly_converted = v;
-        std::cout << "implicitly convert  value to unsigned int  = " 
+        std::cout << "implicitly convert value to " << target_name << " = " 
             << target_implicitly_converted<< '\n';
         }
 
         try {
             if(fn == "to_unsigned")
+            {
                 target_cast = std::to_unsigned<TargetType, SourceType>(v); 
+            }
             else if (fn == "to_integer")
             {
                 target_cast = std::to_integer<TargetType, SourceType>(v); 
             }
+            else if (fn == "to_value")
+            {
+                target_cast = std::to_value<TargetType>(v); 
+            }
             else
             {
-                /* code */
+                auto msg = "test function" + fname + "is not recognized";
+                throw std::runtime_error(msg.c_str());
             }
             
             //unsigned int target_cast_2 = std::to_unsigned(d); // couldn't deduce template parameter ‘S’
@@ -139,6 +149,7 @@ void test_conversion(std::string fn)
         test_conversion_inf_nan<SourceType,  TargetType>(fn);
     }
 
+#if 0
     // there is a warning for 1.0e12 constant assignment, for function return not even a warning
     target_implicitly_converted = std::numeric_limits<TargetType>::max() + 1.0;
     std::cout << "implicitly convert floating point overflow value to unsigned int  = " 
@@ -147,7 +158,7 @@ void test_conversion(std::string fn)
     target_implicitly_converted = std::numeric_limits<TargetType>::min() - 1.0;
     std::cout << "implicitly convert floating point underflow value to unsigned int  = " 
         << target_implicitly_converted<< '\n';
-
+#endif
 }
 
 enum E {E_0=0, E_9bit = 0x100, E_17bit = 0x10000, E_all_one=0xffffffff};
@@ -182,8 +193,10 @@ void test_byte()
 #endif
 }
 
-void test_type()
+/// error in visual studio 2015 (_MSC_VER == 1900)
+void test_type_traits()
 {
+#if ! defined(_MSC_VER) || _MSC_VER >= 1910
     static_assert(std::is_same<int, int32_t>::value);
 
     // bool to unsigned or signal int are safe, is that must be 
@@ -205,10 +218,12 @@ void test_type()
 
     //static_assert(std::is_same<int*, void*>::value);
 
+    static_assert(not std::is_arithmetic<int&>::value);
     static_assert(std::is_integral<char16_t>::value); // true 
     static_assert(std::is_unsigned<char16_t>::value); // true 
     //static_assert(std::is_same<char16_t, uint16_t>::value);
     //static_assert(std::is_same<char16_t, int16_t>::value);
+#endif
 }
 
 #include "third-party/half.hpp"
@@ -277,31 +292,41 @@ int main()
     std::cout << std::boolalpha;
 
     test_conversion<double, unsigned int>("to_unsigned");
-    test_conversion<double, uint64_t>("to_unsigned");
-    test_conversion<int64_t, bool>("to_unsigned");
+    test_conversion<double, uint64_t>("to_integer");
+    test_conversion<double, int64_t>("to_value");
+    test_conversion<int64_t, bool>("to_integer");
     //test_conversion<int64_t, std::byte>("to_unsigned");
-    test_conversion<int32_t, char16_t>("to_unsigned");
+    test_conversion<int32_t, char16_t>("to_integer");
 
-    test_conversion<uint64_t, float>("to_unsigned");
-    test_conversion<double, int64_t>("to_integer");
+    float f = std::to_value<float>(2);  // OK
+    //test_conversion<int, float>("to_value");  // error, called `to_integer`
     test_conversion<uint32_t, int16_t>("to_integer");
 
+    // todo: make test_enum a template function
     //test_enum("to_integer", E_9bit);
     test_enum("to_integer", TE::TE_9bit);
     //E e_cast = std::to_unsigned<E>(TE::TE_9bit);  // runtime_error error, why?
 
     test_byte();
     test_half();
-    //test_conversion<half_float::half, char16_t>("to_unsigned");
+    //test_conversion<half_float::half, char16_t>("to_unsigned");  //todo:
 #if __cplusplus >= 201703L
     test_boost_multiprecision();  // not working
 #endif
     test_implicit_conversion();
-    //test_conversion<boost::multiprecision::int128_t, char16_t>("to_unsigned");  
+    //test_conversion<boost::multiprecision::int128_t, char16_t>("to_integer");  
 
-    int i_value = 1;
-    int& i_ref = i_value;
-    unsigned char uc = std::to_unsigned<unsigned char>(i_ref);
+    /// volatile (deprecated) and reference 
+    volatile int i_value = 1;
+    unsigned char uc_v = std::to_integer<unsigned char>(i_value);
+    volatile int& i_ref = i_value;
+    unsigned char uc_vref = std::to_integer<unsigned char>(i_ref);
+
+    /// const reference 
+    const int c_value = 1;
+    unsigned char uc_c = std::to_integer<unsigned char>(c_value);
+    const int& c_ref = c_value;
+    unsigned char uc_cref = std::to_integer<unsigned char>(c_ref);
 
     std::cout << "============= demo completed ============\n";
     return 0;

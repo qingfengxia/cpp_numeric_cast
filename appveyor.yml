@@ -1,7 +1,27 @@
 # adapted from example: 
-# Build worker image (VM template)
-image: Visual Studio 2015
+# https://www.appveyor.com/docs/build-configuration/#build-matrix
 
+
+# Build worker image (VM template)
+image: 
+- Visual Studio 2019
+- Visual Studio 2015 
+
+platform:
+  - x86
+  - x64
+
+configuration:
+  - Release
+  #- Debug
+
+# "Visual Studio 14 2015", _MSC_VER == 1900
+environment:
+  MSBUILD_FLAGS: /verbosity:minimal /maxcpucount
+  # matrix:
+  # - env_var1
+  # - env_var2
+##########################################################
 # scripts that are called at very beginning, before repo cloning
 init:
   - date /T & time /T
@@ -28,23 +48,24 @@ clone_depth: 5
 
 version: '{build}'
 
-platform:
-  - x86
-  # what is the name for x86-64
-
-configuration:
-  - Release
-  #- Debug
-
-environment:
-  MSBUILD_FLAGS: /verbosity:minimal /maxcpucount
-  matrix:
-    - generator: "Visual Studio 14"    
-    #- generator: "MinGW Makefiles"
-
 matrix:
   fast_finish: true
 
+for:
+  - 
+    matrix:
+      only:
+        - image: Visual Studio 2015
+    environment:
+      cmake_generator: "Visual Studio 14" 
+    
+  - 
+    matrix:
+      only:
+        - image: Visual Studio 2019
+    environment:
+      cmake_generator: "Visual Studio 16"
+    #- generator: "MinGW Makefiles"
 #cache:
 #  - c:\project\fifengine-cpp-MyAppDir\dependencies
 
@@ -53,10 +74,16 @@ install:
   #- curl -LfsS -o libfife.zip https://ci.appveyor.com/api/buildjobs/7xflrp0frgit15u5/artifacts/libfife-dev-c4d5f09-VC14.zip
   #- 7z x libfife.zip -o%APPVEYOR_BUILD_FOLDER%\dependencies -y > nul
 
+# instead of default: build: MSBuild 
 build_script:
   - cd %APPVEYOR_BUILD_FOLDER%
   - echo %APPVEYOR_BUILD_FOLDER%
   - dir
+  # set compiler var
+  - if "%cmake_generator%"=="Visual Studio 14" (set COMPILER="VC14")
+  - if "%cmake_generator%"=="Visual Studio 15" (set COMPILER="VC15")
+  - if "%cmake_generator%"=="Visual Studio 16" (set COMPILER="VC16")
+  - if "%cmake_generator%"=="MinGW Makefiles"  (set COMPILER="MinGW") 
   # create folder for an out-of-source-tree build: "c:\projects\build"
   - cd .. 
   - mkdir build
@@ -64,7 +91,7 @@ build_script:
   # generate build script, todo: MyAppDir should be a variable
   - >
     cmake %APPVEYOR_BUILD_FOLDER%
-    -G "%generator%" 
+    -G "%cmake_generator%" 
     -DCMAKE_INSTALL_PREFIX=./MyAppDir
   # build
   - cmake --build . --target ALL_BUILD --config %configuration% -- /nologo /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
@@ -74,9 +101,6 @@ build_script:
   #- cmake --build ./build --target PACKAGE --config %configuration% -- /nologo
 
 after_build:
-  # set compiler var
-  - if "%generator%"=="Visual Studio 14" (set COMPILER="VC14")
-  - if "%generator%"=="MinGW Makefiles"  (set COMPILER="MinGW") 
   # copy required system libraries from \bin folder into \MyAppDir folder
   #- xcopy %APPVEYOR_BUILD_FOLDER%\MyAppDir\bin\*.* %APPVEYOR_BUILD_FOLDER%\MyAppDir\Tutorial1
   #- rd /s /q %APPVEYOR_BUILD_FOLDER%\MyAppDir\bin
