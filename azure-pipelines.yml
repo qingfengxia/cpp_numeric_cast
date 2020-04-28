@@ -1,0 +1,76 @@
+# Docs see here:
+# https://aka.ms/yaml
+# adapted from,  and delete vcpkg and deployment sections
+# https://github.com/open62541/open62541/blob/master/tools/azure-devops/win/build.ps1
+
+jobs:
+- job: 'win_vs2017'
+  displayName: 'Windows (VS2017)'
+  pool:
+    vmImage: 'vs2017-win2016'
+  variables:
+    CC_NAME: Visual Studio 15 2017
+    CC_SHORTNAME: VS2017
+    CMAKE_GENERATOR: Visual Studio 15 2017
+    FORCE_CXX: ON
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  #- powershell: 
+  #  displayName: Install Requirements
+  - powershell: mkdir build && cd build && cmake .. -G $env:CMAKE_GENERATOR && cmake --build . 
+  #- bash: scripts/build.sh
+    displayName: "Build: $(CC_NAME)"
+
+  #- task: PublishBuildArtifacts@1
+  #  inputs:
+  #      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+  #      ArtifactName: open62541-$(CC_SHORTNAME)
+  #      # publishing artifacts from PRs from a fork is currently blocked
+  #  condition: succeeded()
+  #  displayName: "Publish Artifact: open62541-$(CC_SHORTNAME)"
+
+
+- job: 'win_msys64'
+  displayName: 'Windows (msys64)'
+  pool:
+    vmImage: 'windows-latest'
+  variables:
+    CC_NAME: MinGW Makefiles
+    CC_SHORTNAME: mingw
+    CMAKE_GENERATOR: MinGW Makefiles
+    FORCE_CXX: ON
+    MSYS2_ROOT: C:/msys64
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  #- powershell: ./tools/azure-devops/win/install.ps1
+  #  displayName: Install Requirements
+  # alias mingw32-make into make may not exists, but `cmake --build .` is portable
+  - bash: mkdir build && cd build && cmake .. -G $CMAKE_GENERATOR && cmake --build .
+    displayName: "Build: $(CC_NAME)"
+
+
+- job: 'win_clang'
+  displayName: 'Windows (clang)'
+  pool:
+    vmImage: 'windows-latest'
+  variables:
+    CC_NAME: Clang
+    CC_SHORTNAME: clang-mingw
+    CC: "clang --target=x86_64-w64-mingw32"
+    CXX: "clang++ --target=x86_64-w64-mingw32"
+    CMAKE_GENERATOR: MinGW Makefiles
+    FORCE_CXX: ON
+    MSYS2_ROOT: C:/msys64
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  #- powershell: ./tools/azure-devops/win/install.ps1
+  #  displayName: Install Requirements
+  - bash: mkdir build && cd build && cmake .. -G $CMAKE_GENERATOR && cmake --build . 
+    displayName: "Build: $(CC_NAME)"
+
