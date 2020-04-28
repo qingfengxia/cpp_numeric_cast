@@ -35,7 +35,7 @@ double generate_underflow_value()
 template <typename SourceType, typename TargetType>
 void test_conversion_inf_nan(std::string fn)
 {
-    TargetType target_implicitly_converted = 0;  // -Wall
+    TargetType target_implicitly_converted;
     std::cout << "quite nan: " << std::numeric_limits<TargetType>::quiet_NaN() << '\n'; // just zero
     std::cout << "int  infinity: " << std::numeric_limits<TargetType>::infinity() << '\n';  // just zero
 
@@ -64,8 +64,8 @@ void test_conversion_inf_nan(std::string fn)
         }
         else
         {
-            target_cast_inf = std::to_integer<TargetType, SourceType>(inf_value);
-            target_cast_nan = std::to_integer<TargetType, SourceType>(nan_value);
+            target_cast_inf = std::to_value<TargetType, SourceType>(inf_value);
+            target_cast_nan = std::to_value<TargetType, SourceType>(nan_value);
         }
         
         std::cout << fname << " inf  = " << target_cast_inf<< '\n'; 
@@ -88,25 +88,24 @@ void test_conversion(const std::string fn)
 {
     SourceType stype_max = std::numeric_limits<SourceType>::max();
     SourceType stype_min = std::numeric_limits<SourceType>::min();
-    TargetType target_implicitly_converted = 0; 
+    TargetType target_implicitly_converted{0};   // float half class does not support assignment
 
     const auto& source_name = type_name<SourceType>();
     const auto& target_name = type_name<TargetType>();
     std::string fname = std::string( fn + "<") + target_name + ">(" + source_name + ")" ;
 
     std::cout << "=========" << fname << "==============\n";
-    // code below causes compiling error for half, boost types
-    const std::map<std::string, SourceType> values{
-        {source_name + std::string("max"), stype_max}, 
-        {source_name  + std::string("min"), stype_min},
-        {"generated overflow value", generate_overflow_value<TargetType>()},
-        {"generated underflow value", generate_underflow_value<TargetType>()}
-        };
+    // values map creation by {{}, {}} causes compiling error for half, boost types
+    std::map<std::string, SourceType> values;
+    values[source_name + std::string("max")] = stype_max; 
+    values[source_name  + std::string("min")] = stype_min;
+    values["generated overflow value"] = generate_overflow_value<TargetType>();
+    values["generated underflow value"] = generate_underflow_value<TargetType>();
 
     for(const auto& p: values)
     {
-        TargetType target_implicitly_converted = 0; 
-        TargetType target_cast = 0;
+        TargetType target_implicitly_converted{0}; 
+        TargetType target_cast{0}; 
         SourceType v = p.second;
         if(not std::is_class<SourceType>::value)
         {
@@ -122,11 +121,11 @@ void test_conversion(const std::string fn)
             }
             else if (fn == "to_integer")
             {
-                target_cast = std::to_integer<TargetType, SourceType>(v); 
+                target_cast = std::to_value<TargetType, SourceType>(v); // todo: int->double
             }
             else if (fn == "to_value")
             {
-                target_cast = std::to_value<TargetType>(v); 
+                target_cast = std::to_value<TargetType, SourceType>(v); 
             }
             else
             {
@@ -230,6 +229,7 @@ void test_type_traits()
 
 void test_half()
 {
+    std::cout << "=========" << "half float" << "==============\n";
     using namespace half_float;
    //static_assert(std::is_arithmetic<half_float::half>::value);
     int8_t v1 = std::to_integer<int8_t>(half{1});
@@ -252,17 +252,20 @@ void test_boost_multiprecision()
 {
    using namespace boost::multiprecision;
 
+    std::cout << "=========" << "boost::multiprecision" << "==============\n";
    static_assert(std::detail::supports_arithmetic_operations<int128_t>::value);
    int128_t v = 1;
    //static_assert(std::is_arithmetic<int128_t>::value);
 
-   // int i = std::to_integer<int>(1.2);
+    int128_t i = std::to_value<int128_t>(1);
+    //int128_t i = std::to_value<int128_t>(1.23);  // compiling error
     try{
-        unsigned char uc = std::to_unsigned<unsigned char>(int128_t{1}); // todo
+        unsigned char uc = std::to_unsigned<unsigned char>(int128_t{1000});
+        std::cout << "boost::multiprecision it128_t convered to ubyte " << uc << "\n";
     }
     catch(std::overflow_error e)
     {
-        std::cout << " to_unsigned(enum) error : " << e.what() << '\n'; 
+        std::cout << " to_unsigned(boost_mp) error : " << e.what() << '\n'; 
     }
 
 }
@@ -299,7 +302,7 @@ int main()
     test_conversion<int32_t, char16_t>("to_integer");
 
     float f = std::to_value<float>(2);  // OK
-    //test_conversion<int, float>("to_value");  // error, called `to_integer`
+    test_conversion<int, float>("to_value");  // error, called `to_integer`
     test_conversion<uint32_t, int16_t>("to_integer");
 
     // todo: make test_enum a template function
@@ -309,12 +312,14 @@ int main()
 
     test_byte();
     test_half();
-    //test_conversion<half_float::half, char16_t>("to_unsigned");  //todo:
+    test_conversion<half_float::half, char16_t>("to_unsigned"); 
+    test_conversion<char32_t, half_float::half>("to_value"); 
 #if __cplusplus >= 201703L
     test_boost_multiprecision();  // not working
+    //test_conversion<boost::multiprecision::int128_t, char16_t>("to_integer"); 
 #endif
     test_implicit_conversion();
-    //test_conversion<boost::multiprecision::int128_t, char16_t>("to_integer");  
+
 
     /// volatile (deprecated) and reference 
     volatile int i_value = 1;
