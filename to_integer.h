@@ -40,9 +40,9 @@ namespace detail{
         typename std::enable_if<std::is_arithmetic<S>::value
         || supports_arithmetic_operations<S>::value, int>::type = 0>
 #if __cplusplus >= 201703L
-    T constexpr to_value(const S value)
+    T constexpr to_numeric(const S value)
 #else
-    T to_value(const S value)
+    T to_numeric(const S value)
 #endif
     {
         if (value > std::numeric_limits<T>::max())
@@ -58,15 +58,42 @@ namespace detail{
         }
         return static_cast<T>(value);
     }
+
+    template <typename T, typename S,
+        typename std::enable_if<std::is_arithmetic<S>::value
+        || supports_arithmetic_operations<S>::value, int>::type = 0>
+    bool convertible(const S value) noexcept
+    {
+        if (value > std::numeric_limits<T>::max())
+        {
+            return false;
+        }
+        if (value < std::numeric_limits<T>::min())
+        {
+            return false;
+        }
+        return true;
+    }
 }
 
     /// convert to built-in arithmetic type and half, boost::multiprecision::int128_t
     template <typename T, typename S, 
         typename std::enable_if<std::is_arithmetic<T>::value
         || detail::supports_arithmetic_operations<T>::value, int>::type = 0>
-    T to_value(const S v)
+    bool is_numeric_convertible(const S value) noexcept
     {
-        return detail::to_value<T, S>(v);
+        return detail::convertible<T, S>(value);
+    }
+
+
+
+    /// convert to built-in arithmetic type and half, boost::multiprecision::int128_t
+    template <typename T, typename S, 
+        typename std::enable_if<std::is_arithmetic<T>::value
+        || detail::supports_arithmetic_operations<T>::value, int>::type = 0>
+    T to_numeric(const S v)
+    {
+        return detail::to_numeric<T, S>(v);
     }
 
     /// usage `int s = to_integer<int>(value);`, by auto template type derivation,
@@ -77,7 +104,7 @@ namespace detail{
         typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
     T to_integer(const S v)
     {
-        return detail::to_value<T, S>(v);
+        return detail::to_numeric<T, S>(v);
     }
 
     template <typename T, typename E, 
