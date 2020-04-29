@@ -21,9 +21,12 @@ namespace std {
 
 namespace detail{
 
+#if __cplusplus < 201703L
+    // void_t is not defined until C++17
     template<class...> struct make_void { using type = void; };
     template<class... Ts> using void_t = typename make_void<Ts...>::type;
-    
+#endif
+
     template<class T, class = void>
     struct supports_arithmetic_operations : std::false_type {};
     
@@ -35,6 +38,15 @@ namespace detail{
                       decltype(std::declval<T>() / std::declval<T>())>> 
            : std::true_type {};
 
+    /// type_trait to test if numeric_limits<T> is instantiatable
+    template<class T, class = void>
+    struct _is_numeric : std::false_type {};
+    
+    template<class T>
+    struct _is_numeric<T, 
+               void_t<decltype(std::numeric_limits<T>::max()),
+               decltype(std::numeric_limits<T>::min())>> 
+           : std::true_type {};
  
     template <typename T, typename S,
         typename std::enable_if<std::is_arithmetic<S>::value
@@ -45,6 +57,7 @@ namespace detail{
     T to_numeric(const S value)
 #endif
     {
+        // todo:  warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
         if (value > std::numeric_limits<T>::max())
         {
             throw std::overflow_error(
@@ -74,6 +87,7 @@ namespace detail{
         }
         return true;
     }
+
 }
 
     /// convert to built-in arithmetic type and half, boost::multiprecision::int128_t
@@ -85,7 +99,16 @@ namespace detail{
         return detail::convertible<T, S>(value);
     }
 
-
+    /// specialization for enum source type
+    template <typename T, typename E, 
+        typename std::enable_if<std::is_enum<E>::value
+        && std::is_integral<T>::value, int>::type = 0>
+    bool is_numeric_convertible(const E e)
+    {
+        typedef typename std::underlying_type<E>::type enum_under_type;
+        enum_under_type value = static_cast<enum_under_type>(e);
+        return detail::convertible<T, E>(value);
+    }
 
     /// convert to built-in arithmetic type and half, boost::multiprecision::int128_t
     template <typename T, typename S, 
@@ -113,19 +136,19 @@ namespace detail{
     T to_integer(const E e)
     {
         typedef typename std::underlying_type<E>::type enum_under_type;
-        enum_under_type b = static_cast<enum_under_type>(e);
-        if (b > std::numeric_limits<T>::max())
+        enum_under_type value = static_cast<enum_under_type>(e);
+        if (value > std::numeric_limits<T>::max())
         {
             throw std::overflow_error(
                 "input enum as an integer value overflows the target type");
         }
-        if (b < std::numeric_limits<T>::min())
+        if (value < std::numeric_limits<T>::min())
         {
             // todo: message
             throw underflow_error(
                 "input enum as an integer value underflows the target type");
         }
-        return static_cast<T>(e);
+        return static_cast<T>(value);
     }
 
 // confliction with <cstddef> in C++17
@@ -166,6 +189,7 @@ namespace detail{
     }
     //template< typename T, typename U> std::string to_unsigned( const U& unsigned_int) 
     //{ return to_integer<T, U>(unsigned_int) ; }
+
 
     template  <typename T, typename E,
         typename enable_if<is_enum<E>::value, int>::type = 0>
