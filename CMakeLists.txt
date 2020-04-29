@@ -6,11 +6,14 @@ project(CppToSigned)
 set(PROJECT_BRIEF "provide std::to_integer(), and std::to_unsigned template functions for C++,  by Qingfeng Xia")
 #project version definition
 
-set(CMAKE_BUILD_TYPE Debug)
-
+if (NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
 
 # std can and should be applied to target only
-set(CMAKE_CXX_STANDARD 11)
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 11)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #############################################################
@@ -21,6 +24,10 @@ add_executable(MyTest "tests/test_to_integer.cpp")
 set(MyDemo "demo")
 add_executable(${MyDemo}
     demo.cpp
+)
+
+add_executable(demo_mixed_sign
+    tests/demo_mixed_sign.cpp
 )
 
 ##set_target_properties(${MyDemo} PROPERTIES OUTPUT_NAME "demo")
@@ -38,14 +45,17 @@ endif()
 # Let's set compiler-specific flags
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     # G++
-    target_compile_options(${MyDemo} PRIVATE -Wall -Wextra)
+    target_compile_options(${MyDemo} PRIVATE -Wall -Wextra -Wno-unused)
+    target_compile_options(demo_mixed_sign PRIVATE -Wall -Wextra -Wno-unused)
 elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     # clang++
-    target_compile_options(${MyDemo} PRIVATE -Wall -Wextra)
+    target_compile_options(${MyDemo} PRIVATE -Wall -Wextra -Wno-unused)
+    target_compile_options(demo_mixed_sign PRIVATE -Wall -Wextra -Wno-unused)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
     # MSVC
     target_compile_options(${MyDemo} PRIVATE /EHsc /MTd /W2 /c)
     # Set the DLLEXPORT variable to export symbols
+    target_compile_options(demo_mixed_sign PRIVATE /EHsc /MTd /W2 /c)
     target_compile_definitions(${MyDemo} PRIVATE WIN_EXPORT)
 endif()
 
