@@ -19,7 +19,7 @@ jobs:
 
   #- powershell: 
   #  displayName: Install Requirements
-  - powershell: mkdir build ; cd build && cmake .. -G "$env:CMAKE_GENERATOR" ; cmake --build . 
+  - powershell: mkdir build ; cd build ; cmake .. -G "$env:CMAKE_GENERATOR" ; cmake --build . 
   #- bash: scripts/build.sh
     displayName: "Build: $(CC_NAME)"
 
@@ -60,8 +60,8 @@ jobs:
   variables:
     CC_NAME: Clang
     CC_SHORTNAME: clang-mingw
-    CC: "clang --target=x86_64-w64-mingw32"
-    CXX: "clang++ --target=x86_64-w64-mingw32"
+    #CC: "clang --target=x86_64-w64-mingw32"
+    #CXX: "clang++ --target=x86_64-w64-mingw32"
     CMAKE_GENERATOR: MinGW Makefiles
     FORCE_CXX: ON
     MSYS2_ROOT: C:/msys64
