@@ -10,15 +10,15 @@ add_executable(demo_mixed_sign
 #add_executable(demo_safe_get
 #    "demo_safe_get.cpp"
 #)
-#add_executable(demo_has_member
-#    "demo_has_member.cpp"
-#)
+add_executable(demo_has_member
+    "demo_has_member.cpp"
+)
 
 set(DemoList
     demo 
     demo_mixed_sign
     #demo_safe_get
-    #demo_has_member
+    demo_has_member
 )
 
 ##############################################
