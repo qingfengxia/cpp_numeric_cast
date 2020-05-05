@@ -15,6 +15,9 @@
 #include <stdexcept> // for std::overflow_error
 #include <type_traits>
 
+#if __cplusplus >= 201703L
+#include <cstddef>
+#endif
 
 /// it is safe to inject into std namespace
 namespace std {

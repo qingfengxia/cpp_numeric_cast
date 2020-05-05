@@ -55,7 +55,7 @@ void test_type_traits()
     // failed on macos 'std::is_same<long long, long>::value'
 
     //static_assert(std::is_same<int64_t, long>::value); // failed on macos
-    static_assert(not std::numeric_limits<int>::has_infinity, ""); 
+    static_assert(! std::numeric_limits<int>::has_infinity, ""); 
     
     static_assert(std::is_signed<double>::value, ""); // true for floating point
     //static_assert(std::is_signed<E>::value, ""); // failed for enum
@@ -65,7 +65,7 @@ void test_type_traits()
 
     //static_assert(std::is_same<int*, void*>::value, "");
 
-    static_assert(not std::is_arithmetic<int&>::value, "");
+    static_assert(! std::is_arithmetic<int&>::value, "");
     static_assert(std::is_integral<char16_t>::value, ""); // true 
     static_assert(std::is_unsigned<char16_t>::value, ""); // true 
     //static_assert(std::is_same<char16_t, uint16_t>::value, "");

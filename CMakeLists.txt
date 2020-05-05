@@ -16,66 +16,46 @@ if (NOT DEFINED CMAKE_CXX_STANDARD)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+#################################
+option(BUILD_TESTING "Build the testing tree." ON)
+option(CODE_COVERAGE "Enable coverage reporting" OFF)
+###################################
+# Code Coverage Configuration
+
+if(NOT WIN32 AND CODE_COVERAGE)
+#if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_library(coverage_config INTERFACE)
+  # Add required flags (GCC & LLVM/Clang)
+  message(STATUS "coverage config has been integrated into this project")
+  target_compile_options(coverage_config INTERFACE
+    -O0        # no optimization
+    -g         # generate debug info
+    --coverage # sets all required flags
+  )
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+    target_link_options(coverage_config INTERFACE --coverage)
+  else()
+    target_link_libraries(coverage_config INTERFACE --coverage)
+  endif()
+endif()
+
+########################################
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Boost 1.65)
-############################# unit test ##########################
 
-add_executable(MyTest "tests/test_to_integer.cpp")
 
-############################ demo ##################################
+############################ demo #############
 
-add_executable(demo
-    "examples/demo.cpp"
-)
-##set_target_properties(${MyDemo} PROPERTIES OUTPUT_NAME "demo")
+add_subdirectory(examples)
 
-add_executable(demo_mixed_sign
-    "examples/demo_mixed_sign.cpp"
-)
-set(DemoList
-    demo 
-    demo_mixed_sign
-)
-
-if(Boost_FOUND)
-    message(STATUS "boost lib found with version ${Boost_VERSION}")
-    include_directories(${Boost_INCLUDE_DIRS})
-    target_compile_definitions(demo 
-        PRIVATE "-DUSE_BOOST_MULTIPRECISION")
-    if(OFF)
-        #if(${Boost_VERSION} VERSION_GREATER  "1.68")
-        add_executable(demo_boost_safe_numerics
-            "examples/demo_boost_safe_numerics.cpp"
-        )
-        list(APPEND DemoList demo_boost_safe_numerics)
-        target_compile_definitions(demo_boost_safe_numerics 
-            PRIVATE "-DUSE_BOOST_SAFE_NUMERICS")
-    endif()
+############### unit test ######################GB
+# Only build tests if we are the top-level project
+# Allows this to be used by super projects with `add_subdirectory`
+if (BUILD_TESTING AND (PROJECT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR))
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 
-##########################################################
-# To build shared libraries in Windows, we set CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS to TRUE.
-# See https://cmake.org/cmake/help/v3.4/variable/CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS.html
-# See https://blog.kitware.com/create-dlls-on-windows-without-declspec-using-new-cmake-export-all-feature/
-
-if(WIN32)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
-
-foreach(MyDemo IN LISTS DemoList)
-    # Let's set compiler-specific flags
-    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-        # G++
-        target_compile_options(${MyDemo} PRIVATE -Wall -Wextra -Wno-unused)
-    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-        # clang++
-        target_compile_options(${MyDemo} PRIVATE -Wall -Wextra -Wno-unused)
-    elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
-        # MSVC
-        target_compile_options(${MyDemo} PRIVATE /EHsc /MTd /W2 /c)
-        # Set the DLLEXPORT variable to export symbols
-        target_compile_definitions(${MyDemo} PRIVATE WIN_EXPORT)
-    endif()
-endforeach()
 

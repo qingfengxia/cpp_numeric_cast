@@ -107,7 +107,7 @@ void test_conversion(const std::string fn)
         TargetType target_implicitly_converted{0}; 
         TargetType target_cast{0}; 
         SourceType v = p.second;
-        if(not std::is_class<SourceType>::value)
+        if(! std::is_class<SourceType>::value)
         {
         target_implicitly_converted = v;
         std::cout << "implicitly convert value to " << target_name << " = " 

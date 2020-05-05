@@ -19,7 +19,7 @@ jobs:
 
   #- powershell: 
   #  displayName: Install Requirements
-  - powershell: mkdir build ; cd build ; cmake .. -G "$env:CMAKE_GENERATOR" ; cmake --build . 
+  - powershell: mkdir build ; cd build ; cmake .. -G "$env:CMAKE_GENERATOR" -DCODE_COVERAGE=ON ; cmake --build . 
   #- bash: scripts/build.sh
     displayName: "Build: $(CC_NAME)"
 
@@ -49,7 +49,7 @@ jobs:
   #- powershell: ./tools/azure-devops/win/install.ps1
   #  displayName: Install Requirements
   # alias mingw32-make into make may not exists, but `cmake --build .` is portable
-  - bash: mkdir build && cd build && cmake .. -G "${CMAKE_GENERATOR}" && cmake --build .
+  - bash: mkdir build && cd build && cmake .. -G "${CMAKE_GENERATOR}" -DCODE_COVERAGE=ON && cmake --build .
     displayName: "Build: $(CC_NAME)"
     #env: CMAKE_GENERATOR  # ampping env variable is not necessary
 
@@ -71,7 +71,7 @@ jobs:
 
   #- powershell: ./tools/azure-devops/win/install.ps1
   #  displayName: Install Requirements
-  - bash: mkdir build && cd build && cmake .. -G "${CMAKE_GENERATOR}" && cmake --build . 
+  - bash: mkdir build && cd build && cmake .. -G "${CMAKE_GENERATOR}" -DCODE_COVERAGE=ON && cmake --build . 
     displayName: "Build: $(CC_NAME)"
     #env: CMAKE_GENERATOR
 
