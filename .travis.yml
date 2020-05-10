@@ -17,16 +17,27 @@ matrix:
           packages:
             - libboost-dev
             - cmake
-            - g++-8
+            - g++
       env:
         - GCS_TAG=ubuntu_cpp17
       install:
         - echo "nothing is needed here, PWD = $PWD"
       script:
         # enable c++17 
-        - mkdir build && cd build && CMAKE_CXX_STANDARD=17 cmake .. && make
-        - ./demo && ./MyTest
+        - mkdir build && cd build && CODE_COVERAGE=ON CMAKE_CXX_STANDARD=17 cmake .. && make
+        - ./bin/demo && ./bin/MyTest
 
+      after_success:
+        # Create lcov report
+        - echo "start coverage collection PWD = ${PWD}"
+        - if [ -d build ]; then cd build; fi
+        - lcov --capture --directory ./ --output-file coverage.info
+        - THIRD_PARTY_DIR=$(realpath ../third-party)
+        - lcov --remove coverage.info '/usr/*' '${THIRD_PARTY_DIR}/*' --output-file coverage.info # filter system-files
+        - lcov --list coverage.info # debug info
+        # Uploading report to CodeCov
+        - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
+        
     - os: linux
       dist: xenial
       addons:
@@ -41,7 +52,7 @@ matrix:
         - echo "nothing is needed here, PWD = $PWD"
       script:
         - mkdir build && cd build && CMAKE_CXX_STANDARD=11 cmake .. && make
-        - ./demo && ./MyTest
+        - ./bin/demo && ./bin/MyTest
 
     # 64-bit macos and llvm
     - os: macos
@@ -54,5 +65,5 @@ matrix:
       script:
         # multi-line command
         - mkdir build && cd build && cmake .. && make
-        - ./demo && ./MyTest
+        - ./bin/demo && ./bin/MyTest
 

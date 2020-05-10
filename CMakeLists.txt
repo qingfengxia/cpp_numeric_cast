@@ -16,6 +16,10 @@ if (NOT DEFINED CMAKE_CXX_STANDARD)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+## put all targets in bin and lib
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+
 #################################
 option(BUILD_TESTING "Build the testing tree." ON)
 option(CODE_COVERAGE "Enable coverage reporting" OFF)

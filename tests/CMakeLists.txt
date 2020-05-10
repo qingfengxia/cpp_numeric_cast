@@ -2,6 +2,8 @@
 
 add_executable(MyTest "test_to_integer.cpp")
 
-target_link_libraries(MyTest PRIVATE coverage_config)
+if(NOT WIN32 AND CODE_COVERAGE)
+    target_link_libraries(MyTest PRIVATE coverage_config)
+endif()
 
 add_test(NAME example_test COMMAND MyTest)
