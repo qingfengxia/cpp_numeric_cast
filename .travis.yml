@@ -18,6 +18,7 @@ matrix:
             - libboost-dev
             - cmake
             - g++
+            - lcov
       env:
         - GCS_TAG=ubuntu_cpp17
       install:
@@ -64,6 +65,6 @@ matrix:
         - echo "nothing is needed here, PWD = $PWD"
       script:
         # multi-line command
-        - mkdir build && cd build && cmake .. && make
+        - mkdir build && cd build && CMAKE_CXX_STANDARD=14 cmake .. && make
         - ./bin/demo && ./bin/MyTest
 

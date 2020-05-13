@@ -7,13 +7,18 @@
 #endif
 
 #include "demo.h"
+#include "to_integer.h"
+
+// need C++14
 
 void test()
 {
     std::cout << "================ boost safe numerics =============" << std::endl;
     using namespace boost::safe_numerics;
-    static_assert(std::is_numeric<safe<std::int32_t>>::value, "");
+
     try{
+        auto i = std::to_integer<int16_t>(safe<std::int32_t>(1));
+        auto j = std::to_integer<int16_t>(safe<std::int32_t>(INT_MAX));
         
         safe<std::int32_t> x = INT_MAX;
         safe<std::int32_t> y = 100;
@@ -34,7 +39,15 @@ int main()
     
     test();
 
-    //test_conversion<double, safe<std::int32_t>>("to_integer");
+    try{
+        auto i = std::to_integer<int16_t>(safe<std::int32_t>(1));
+        auto j = std::to_integer<int16_t>(safe<std::int32_t>(INT_MAX));
+    }
+    catch(std::exception & e){
+        // which we can catch here
+        std::cout << "error detected:" << e.what() << std::endl;
+    }
+    //test_conversion<double, safe<std::int32_t>>("to_integer"); // does not compile
 /*
     test_conversion<double, unsigned int>("to_unsigned");
     test_conversion<double, uint64_t>("to_integer");
