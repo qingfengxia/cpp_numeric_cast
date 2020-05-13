@@ -1,28 +1,62 @@
 
 
-## to_integer() and to_unsigned() template methods for safer numeric type conversion
+[![Build Status](https://travis-ci.org/qingfengxia/cpp_to_integer.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_to_integer.svg)   [![Windows Build status](https://ci.appveyor.com/api/projects/status/lkpn62t55wfie52t?svg=true)](https://ci.appveyor.com/project/qingfengxia/cpp-to-integer)
+[![Boost Software License][license-badge]](LICENSE.md)
+
+#  Runtime safe numeric type conversion
+
+Project: Programming Language C++
+Audience: Study Group 6 (Numerics), Library Evolution Working Group Incubator
 
 Qingfeng Xia, Copyright 2020
 Boost Software License
 
-[![Build Status](https://travis-ci.org/qingfengxia/cpp_to_integer.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_to_integer.svg) 
 
+## 0. Revision History
 
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/lkpn62t55wfie52t?svg=true)](https://ci.appveyor.com/project/qingfengxia/cpp-to-integer)
+## 1. Introduction
 
-## 1. Revision History
+```cpp
+// throwable dynamic numeric cast
+to_integer()
+to_numeric()     // boost::numeric::numeric_cast
+
+to_enum()
+to_index()  // or safe at() for std::vector and std::span
+
+// static type traits
+is_numeric<T>::value
+// is_value_convertible()
+bool convertible<TargetType>(SourceType) noexcept
+```
+
+Propose a keyword to prevent implicit conversion
+```c++
+explicit f(int i, double j); // prevent implicit convertion of all parameters 
+
+g(explicit int i, double j); // prevent implicit convertion for the first parameter
+```
 
 ## 2. Motivation
 
-1. a portable way to suppress compiler warning on conversion
+1. A portable way to suppress compiler warning on conversion
 
-From size_t, returned by STL container lib to signed integer for some arithmetic operation is a common operation, but there is compiler warning. 
+Conversion from unsigned integer of `size_t` type, returned by STL containers. to signed integer for some arithmetic operation is a common operation, but there is compiler warning. 
+
+[Compiler Warning (level 4) C4245, 'conversion' : conversion from 'type1' to 'type2', signed/unsigned mismatch](https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4245?view=vs-2019)
+
+Compiler should issue some warning for the code snippet below, if the warning switch has been turned on.
+
 ``` cpp
-int i = myVector.size() - 100;
+#include <vector>
+#include <iostream>
+
+int main() {
+
+}
 ```
 
-`int i = static_cast<int> ( myVector.size() - 100);` can suppress this warning, but
-if `myVector.size() -100 > INT_MAX` in big data application, then the result is not what we want.
+In C++11, `static_cast` can suppress this warning, e.g. `int i = static_cast<int> ( myVector.size() - 100);`  but if `myVector.size() - 100 > INT_MAX` in big data application, then the result is not what we want.
 
 Another example, from signed integer to STL container index
 
@@ -38,6 +72,10 @@ int main()
     return 0;
 }
 ```
+
+`std::make_signed` used in meta programming. 
+https://stackoverflow.com/questions/13150449/efficient-unsigned-to-signed-cast-avoiding-implementation-defined-behavior
+
 
 2. to throw runtime exception for arithmetic type conversion underflow/overflow  in critical scenario. 
 
@@ -56,18 +94,53 @@ For example, javascript has only double type integer, even array index is double
 #### Integral promotion and conversion
 
 see external link: 
-uint32_t to int64_t is safe, the latter one has range covering the previous one, conersion happens without compiler warning. 
+`uint32_t` to `int64_t` is safe, the latter one has range covering the previous one, conersion happens without compiler warning. 
 
-uint32_t to int32_t is not safe, overflow can happen. it is conversion with compiler warning.
+for the expression, the automatically conversion from `int32_t` to `uint32_t` is not safe. Minus integer is converted into a very big positive number. Converted back to signed integer can be arihtmetic correctly, but the leave expression result as unsigned type is not ideal.
+
+ assigning `uint32_t` value to `int32_t` is not safe, overflow can happen. it is implicite conversion with compiler warning.
 
 float -> int, if float_value > INT_MAX, set the int_value to INT_MAX.
 int -> float: IEEE rounding if EEE arithmetic is supported, 
 
+
+
+### Boost safe numerics
+
+```cpp
+checked_result<R>
+Checked Arithmetic
+interval<R>
+safe_compare<T, U>
+```
+
+
+
 ## 3. Rationale
+
+Compiling time `is_narrow_convertible<>` type traits, this is a runtime check.
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0870r2.html
+
+### boost safe numerics
+`safe<T>`
+> library absolutely guarantees that no integer arithmetic expression will yield incorrect results. 
+https://www.boost.org/doc/libs/1_73_0/libs/safe_numerics/doc/html/index.html
+
+
+"a type T is Numeric if there exists a specialization of `std::numeric_limits<T>`"
+`to_value` or `to_numeric`
+`IndexType to_index<ContainerType, SourceType>(SourceType v)`
+
+
+```cpp
+typedef boost::numeric::converter<int,double> Double2Int ;
+int x = Double2Int::convert(2.0);
+```
+https://www.boost.org/doc/libs/1_73_0/libs/numeric/conversion/doc/html/index.html
 
 ### fail-fast: for type conversion, for safety scientific computation.  
 
-C# `checked` integer overflow. 
+C# has a keyword `checked` to check integer overflow at runtime. 
 
 ```cs
 byte value = 240;
@@ -117,12 +190,15 @@ int i = std::to_integer<int>(f());
 
 ```
 
+Boost sign function
+https://www.boost.org/doc/libs/1_73_0/libs/math/doc/html/math_toolkit/sign_functions.html
+
 ## Implementation
 
 Header files required:
 `<type_traits> ` to limit source type to convert, so C++11 is a minimum requirement
 `<limits>`  for overflow detection, get the target type min() and `max()`
-`<stdexcept>`  for standard exceptions 
+`<stdexcept>`  for standard overflow exceptions 
 
 The actual conversion is done by  **static_cast**<>  
 
@@ -134,7 +210,12 @@ The actual conversion is done by  **static_cast**<>
 
 ### naming
 
-reuse the name `std::to_integer<>(std::byte)`. 
+`std::to_numeric<>()`, is a general method for numeric types conversion. 
+```cpp
+std::is_arithmetic<T>::value || detail::supports_arithmetic_operations<T>::value
+```
+
+`std::to_integer<>()`: reuse the name `std::to_integer<>(std::byte)`. 
 From `std::byte` to integer is safe except for to `int8_t`. 
 ```cpp
   template<typename _IntegerType>
@@ -146,10 +227,8 @@ It is proposed to modify this `std::to_integer<>(std::byte)` to check for the `i
 
 function naming follows `std::to_string<T>()`
 
-
 `to_enum<>()` or `enum_cast<>()`
 
-`to_floating_point<>()`, is not quite necessary
 
 ### which standard header those functions should go?
 
@@ -172,6 +251,10 @@ int main()
     int r = f<int>(1.2);
 }
 ```
+
+why `boost::math::round` can not provide a template parameter for the return type?
+
+https://www.boost.org/doc/libs/1_73_0/libs/math/doc/html/math_toolkit/rounding/round.html
 
 ### Target types
 1. integral , floating point , char types: unsigned integer,  any class support `std::numeric_limits<T>`
@@ -249,8 +332,7 @@ char8_t since C++20
 `std::to_integer<TargetIntType>(std::byte b)`
 
 6. enum  `std::byte` is a `enum class`,    2 step cast
-    
-
+   
 7.  half precision float, standardized by IEEE754
 An open source version of half implemented has been incorporated into this project. 
 `numeric_limits<T>`
@@ -268,10 +350,17 @@ An open source version of half implemented has been incorporated into this proje
 
 `std::to_address()` works for raw pointer and smart pointer classes
 
+
 ### Performance impact
 
 exception overhead is regarded insignificant in C++.
 C++17 `if constexpr ()` may reduce runtime 
+
+
+
+inline template function yes!
+
+
 
 ##  Tested platforms Compiler support
 
@@ -290,10 +379,12 @@ Table 1: tested compiler and platforms by CI, using C++11 compiler
 Visual studio C++ version macro
 https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=vs-2019
 
+### Standalone Version
+Sources and Downloads
 
 ## Disclaimer and copyright 
 
-This project (code) is a personal contribution in personal time, it is not a work related/sponsored by my employer.
+This project (code) is a personal contribution in personal time, it is not a work sponsored by my employer. If this feature is can be submit as a c++ proposal, the author may seek sponsorship from the employer.
 
 Codes in this repository (except for lib in third-party lib) are licensed in
 [Boost Software License](https://www.boost.org/users/license.html). It is free for open source and close source project.
@@ -312,4 +403,4 @@ Email: qingfeng.xia(a)gmail
 
 [1] implicit conversion https://docs.microsoft.com/en-us/cpp/cpp/type-conversions-and-type-safety-modern-cpp?view=vs-2019
 
-[2] to add more
+[2] [A proposal for a type trait to detect narrowing conversions](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0870r2.html)
