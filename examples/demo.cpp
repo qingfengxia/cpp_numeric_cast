@@ -103,8 +103,8 @@ void test_boost_multiprecision()
    int128_t v = 1;
    //static_assert(std::is_arithmetic<int128_t>::value, "");
 
-    int128_t i = std::to_numeric<int128_t>(1);
-    //int128_t i = std::to_numeric<int128_t>(1.23);  // compiling error
+    int128_t i = std::numeric_cast<int128_t>(1);
+    //int128_t i = std::numeric_cast<int128_t>(1.23);  // compiling error
     try{
         unsigned char uc = std::to_unsigned<unsigned char>(int128_t{1000});
         std::cout << "boost::multiprecision it128_t converted to ubyte " << uc << "\n";
@@ -156,13 +156,13 @@ int main()
 
     test_conversion<double, unsigned int>("to_unsigned");
     test_conversion<double, uint64_t>("to_integer");
-    test_conversion<double, int64_t>("to_numeric");
+    test_conversion<double, int64_t>("numeric_cast");
     test_conversion<int64_t, bool>("to_integer");
     //test_conversion<int64_t, std::byte>("to_unsigned");
     test_conversion<int32_t, char16_t>("to_integer");
 
-    float f = std::to_numeric<float>(2);  // OK
-    test_conversion<int, float>("to_numeric");  // error, called `to_integer`
+    float f = std::numeric_cast<float>(2);  // OK
+    test_conversion<int, float>("numeric_cast");  // error, called `to_integer`
     test_conversion<uint32_t, int16_t>("to_integer");
 
     // todo: make test_enum a template function
@@ -173,7 +173,7 @@ int main()
     test_byte();
     test_half();
     test_conversion<half_float::half, char16_t>("to_unsigned"); 
-    test_conversion<char32_t, half_float::half>("to_numeric");
+    test_conversion<char32_t, half_float::half>("numeric_cast");
 
 #if USE_BOOST_MULTIPRECISION
     test_boost_multiprecision();  // not working

@@ -55,9 +55,9 @@ namespace detail{
         typename std::enable_if<std::is_arithmetic<S>::value
         || supports_arithmetic_operations<S>::value, int>::type = 0>
 #if __cplusplus >= 201703L
-    T constexpr to_numeric(const S value)
+    T constexpr numeric_cast(const S value)
 #else
-    T to_numeric(const S value)
+    T numeric_cast(const S value)
 #endif
     {
         // todo:  warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
@@ -117,9 +117,9 @@ namespace detail{
     template <typename T, typename S, 
         typename std::enable_if<std::is_arithmetic<T>::value
         || detail::supports_arithmetic_operations<T>::value, int>::type = 0>
-    T to_numeric(const S v)
+    T numeric_cast(const S v)
     {
-        return detail::to_numeric<T, S>(v);
+        return detail::numeric_cast<T, S>(v);
     }
 
     /// usage `int s = to_integer<int>(value);`, by auto template type derivation,
@@ -130,7 +130,7 @@ namespace detail{
         typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
     T to_integer(const S v)
     {
-        return detail::to_numeric<T, S>(v);
+        return detail::numeric_cast<T, S>(v);
     }
 
     template <typename T, typename E, 

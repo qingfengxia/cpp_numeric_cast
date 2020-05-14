@@ -1,6 +1,6 @@
 
 
-add_executable(MyTest "test_to_integer.cpp")
+add_executable(MyTest "test_numeric_cast.cpp")
 
 if(NOT WIN32 AND CODE_COVERAGE)
     target_link_libraries(MyTest PRIVATE coverage_config)

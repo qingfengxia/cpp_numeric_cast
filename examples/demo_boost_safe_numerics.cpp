@@ -7,7 +7,7 @@
 #endif
 
 #include "demo.h"
-#include "to_integer.h"
+#include "numeric_cast.h"
 
 // need C++14
 
@@ -51,13 +51,13 @@ int main()
 /*
     test_conversion<double, unsigned int>("to_unsigned");
     test_conversion<double, uint64_t>("to_integer");
-    test_conversion<double, int64_t>("to_numeric");
+    test_conversion<double, int64_t>("numeric_cast");
     test_conversion<int64_t, bool>("to_integer");
     //test_conversion<int64_t, std::byte>("to_unsigned");
     test_conversion<int32_t, char16_t>("to_integer");
 
     test_conversion<half_float::half, char16_t>("to_unsigned"); 
-    test_conversion<char32_t, half_float::half>("to_numeric");
+    test_conversion<char32_t, half_float::half>("numeric_cast");
 */
     std::cout << "============= demo completed ============\n";
     return 0;

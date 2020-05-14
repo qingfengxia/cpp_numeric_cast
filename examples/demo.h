@@ -12,7 +12,7 @@
 #include <map>
 #include <cstddef>
 
-#include "to_integer.h"
+#include "numeric_cast.h"
 
 #include <typeinfo>
 // typeid().name() of g++ does not given full type name
@@ -64,8 +64,8 @@ void test_conversion_inf_nan(std::string fn)
         }
         else
         {
-            target_cast_inf = std::to_numeric<TargetType, SourceType>(inf_value);
-            target_cast_nan = std::to_numeric<TargetType, SourceType>(nan_value);
+            target_cast_inf = std::numeric_cast<TargetType, SourceType>(inf_value);
+            target_cast_nan = std::numeric_cast<TargetType, SourceType>(nan_value);
         }
         
         std::cout << fname << " inf  = " << target_cast_inf<< '\n'; 
@@ -121,11 +121,11 @@ void test_conversion(const std::string fn)
             }
             else if (fn == "to_integer")
             {
-                target_cast = std::to_numeric<TargetType, SourceType>(v); // todo: int->double
+                target_cast = std::numeric_cast<TargetType, SourceType>(v); // todo: int->double
             }
-            else if (fn == "to_numeric")
+            else if (fn == "numeric_cast")
             {
-                target_cast = std::to_numeric<TargetType, SourceType>(v); 
+                target_cast = std::numeric_cast<TargetType, SourceType>(v); 
             }
             else
             {

@@ -19,7 +19,7 @@ Boost Software License
 ```cpp
 // throwable dynamic numeric cast
 to_integer()
-to_numeric()     // boost::numeric::numeric_cast
+numeric_cast()     // boost::numeric::numeric_cast
 
 to_enum()
 to_index()  // or safe at() for std::vector and std::span
@@ -128,7 +128,7 @@ https://www.boost.org/doc/libs/1_73_0/libs/safe_numerics/doc/html/index.html
 
 
 "a type T is Numeric if there exists a specialization of `std::numeric_limits<T>`"
-`to_value` or `to_numeric`
+`to_value` or `numeric_cast`
 `IndexType to_index<ContainerType, SourceType>(SourceType v)`
 
 
@@ -182,7 +182,7 @@ There are compiler extensions that may be used to generate C++ exceptions automa
 ## header-only usage
 
 ```cpp
-#include "to_integer.h"
+#include "numeric_cast.h"
 
 size_t f() { return 0xffffffffff; }
 int i = std::to_integer<int>(f());
@@ -210,7 +210,7 @@ The actual conversion is done by  **static_cast**<>
 
 ### naming
 
-`std::to_numeric<>()`, is a general method for numeric types conversion. 
+`std::numeric_cast<>()`, is a general method for numeric types conversion. 
 ```cpp
 std::is_arithmetic<T>::value || detail::supports_arithmetic_operations<T>::value
 ```
