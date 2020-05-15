@@ -36,7 +36,7 @@ matrix:
         - THIRD_PARTY_DIR=$(realpath ../third-party)
         - lcov --remove coverage.info '/usr/*' '${THIRD_PARTY_DIR}/*' --output-file coverage.info # filter system-files
         - lcov --list coverage.info # debug info
-        # Uploading report to CodeCov
+        # Uploading report to CodeCov, you must signup in codecov and set token in repo env var
         - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
         
     - os: linux
