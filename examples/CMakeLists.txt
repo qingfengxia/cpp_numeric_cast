@@ -1,6 +1,6 @@
 
 add_executable(demo
-    "demo.cpp"
+    "demo_numeric_cast.cpp"
 )
 ##set_target_properties(${MyDemo} PROPERTIES OUTPUT_NAME "demo")
 
@@ -19,7 +19,7 @@ add_executable(demo_explicit
 )
 
 set(DemoList
-    demo 
+    demo_numeric_cast
     demo_mixed_sign
     #demo_safe_get
     demo_has_member
@@ -27,7 +27,8 @@ set(DemoList
 )
 
 ##############################################
-if(Boost_FOUND)
+# MACOS has some error in boost::safe_numerics
+if(Boost_FOUND AND NOT APPLE)
     message(STATUS "boost lib found with version ${Boost_VERSION}")
     include_directories(${Boost_INCLUDE_DIRS})
     target_compile_definitions(demo 

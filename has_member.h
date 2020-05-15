@@ -46,6 +46,7 @@ std::string optionalToString(T* obj)
     }
 
 #if __cplusplus < 201103L
+#if defined(_MSC_VER) &&  _MSC_VER < 1900  // visual studio 2015
 namespace std{
     template<bool C, typename T = void>
     struct enable_if {
@@ -55,6 +56,7 @@ namespace std{
     template<typename T>
     struct enable_if<false, T> { };
 }
+#endif
 #else
 #include <type_traits>
 #endif

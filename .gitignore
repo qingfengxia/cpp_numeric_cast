@@ -1,2 +1,6 @@
-
+blg/
 build/
+.vscode/
+todo.md
+stage/
+doc/

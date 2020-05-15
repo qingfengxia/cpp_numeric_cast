@@ -3,6 +3,7 @@
 
 
 # Build worker image (VM template)
+# visual studio 2015 is needed for c++ support
 image: 
 - Visual Studio 2019
 - Visual Studio 2015 
