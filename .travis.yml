@@ -26,7 +26,7 @@ matrix:
       script:
         # enable c++17 
         - mkdir build && cd build && CODE_COVERAGE=ON CMAKE_CXX_STANDARD=17 cmake .. && make
-        - ./bin/demo && ./bin/MyTest
+        - bash ../scripts/run_all_tests.sh
 
       after_success:
         # Create lcov report
@@ -53,7 +53,7 @@ matrix:
         - echo "nothing is needed here, PWD = $PWD"
       script:
         - mkdir build && cd build && CMAKE_CXX_STANDARD=11 cmake .. && make
-        - ./bin/demo && ./bin/MyTest
+        - bash ../scripts/run_all_tests.sh
 
     # 64-bit macos and llvm
     - os: macos
@@ -66,5 +66,5 @@ matrix:
       script:
         # multi-line command
         - mkdir build && cd build && CMAKE_CXX_STANDARD=14 cmake .. && make
-        - ./bin/demo && ./bin/MyTest
+        - bash ../scripts/run_all_tests.sh
 
