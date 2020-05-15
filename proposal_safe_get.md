@@ -1,5 +1,9 @@
 # Runtime safe getter for Array and non-hash STL sequence containers
 
+very early draft for discussion
+
+By Qingfeng Xia 2020
+
 ## Motivation
 
 Safe getter `std::get<size_t_index>(ContainerType)` is available for `std::tuple` and `std::array<ElementType, fixed_size>`,  both have the known element size at the compiling time. The compiler will do bounding check at compiling time. Runtime safe indexing function `at(size_t index)` are available for `std::vector`. If index is out of bound, exception will throw. 
@@ -22,6 +26,7 @@ c++20  `std::array` from builtin array by `std::to_array()` in C++20.
 
 `iterator` can be used with `std::list`, even non-contiguous memory, raw pointer can not accessor the next element by offset pointer like `pointer++`.
 
-
+## Implementation 
+todo
 
 

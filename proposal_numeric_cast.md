@@ -1,50 +1,41 @@
-
-
-[![Build Status](https://travis-ci.org/qingfengxia/cpp_to_integer.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_to_integer.svg)   [![Windows Build status](https://ci.appveyor.com/api/projects/status/lkpn62t55wfie52t?svg=true)](https://ci.appveyor.com/project/qingfengxia/cpp-to-integer)
-[![Boost Software License][license-badge]](LICENSE.md)
-
 #  Runtime safe numeric type conversion
 
 Project: Programming Language C++
 Audience: Study Group 6 (Numerics), Library Evolution Working Group Incubator
 
 Qingfeng Xia, Copyright 2020
-Boost Software License
 
 
 ## 0. Revision History
 
 ## 1. Introduction
 
+Proposed a few helper functions to make numeric conversion safer.
 ```cpp
 
 // type trait for both built in numeric types and user defined type like half float
 is_numeric<T>();
 
 // throwable dynamic numeric cast
-numeric_cast()     // boost::numeric::numeric_cast
-to_integer()
+numeric_cast()  // a simplified but should works like boost::numeric::numeric_cast
+// note: after the author reinvented the wheel, `boost::numeric::numeric_cast` was found to be more feature complete with trait and policy. 
+
 to_index()  // to size_t
 
-// from numeric types to enum with runtime overflow check
-to_enum()
-
-// runtime indexing safety
-// safe std::get() for std::vector and std::span, just as `at()`
-
-// static type traits
+// type traits to check if built in types and user defined types support numeric_cast
 is_numeric<T>::value
-// check if the cast will cause runtime error
+
+// check if the cast may cause runtime error
 bool convertible<TargetType>(SourceType) noexcept
 // can  be named as  `is_numeric_convertible()`
 ```
 
-Propose a keyword to prevent implicit conversion, see [use keyword explicit to prevent parameter implicit conversion]()
-
 ```c++
-explicit void f(int i, double j); // prevent implicit conversion of all parameters 
+// from numeric types to enum with runtime overflow check
+// javascript has only 1 numeric type double, 
+// safe cast from double to C++ enum may be useful
+to_enum()  
 
-void g(explicit int i, double j); // prevent implicit conversion for the first parameter
 ```
 
 ## 2. Motivation
@@ -83,11 +74,11 @@ int main()
 }
 ```
 
-`std::make_signed` used in meta programming. 
+`std::make_signed` used in meta programming, but not relevant here. 
 https://stackoverflow.com/questions/13150449/efficient-unsigned-to-signed-cast-avoiding-implementation-defined-behavior
 
 
-2. to throw runtime exception for arithmetic type conversion underflow/overflow  in critical scenario. 
+2. to throw runtime exception for arithmetic type conversion underflow/overflow  in critical scenarios. 
 
 ```cpp
 // there is a compiler warning "overflow" for constant assignment 
@@ -101,6 +92,7 @@ target_implicitly_converted = generate_overflow_value();
 3. foreign function interface (FFI)
 For example, javascript has only double type integer, even array index is double type. It must be convert to unsigned int in C/C++ side.  It is kind of unsafe `narrow`, in contrast of from safe numeric promotion.
 
+### Background
 #### Integral promotion and conversion
 
 see external link: 
@@ -114,7 +106,6 @@ float -> int, if float_value > INT_MAX, set the int_value to INT_MAX.
 int -> float: IEEE rounding if EEE arithmetic is supported, 
 
 
-
 ### Boost safe numerics
 
 ```cpp
@@ -124,7 +115,7 @@ interval<R>
 safe_compare<T, U>
 ```
 
-
+### Boost `boost::numeric_cast`
 
 ## 3. Rationale
 
@@ -189,13 +180,13 @@ Similarly,  floating point computation hardware (FPU) may signal for NAN result.
 There are compiler extensions that may be used to generate C++ exceptions automatically whenever a floating-point exception is raised:
 
 
-## header-only usage
+## use it now:  header-only single file library
 
 ```cpp
 #include "numeric_cast.h"
 
 size_t f() { return 0xffffffffff; }
-int i = std::to_integer<int>(f());
+int i = std::numeric_cast<int>(f());
 // std::overflow_error will throw here
 
 ```
@@ -218,14 +209,14 @@ The actual conversion is done by  **static_cast**<>
 
  The source value will not be modified, this function will always create a new value of the target type.
 
-### naming
+### Naming
 
-`std::numeric_cast<>()`, is a general method for numeric types conversion. 
+1. `std::numeric_cast<>()`, is a general method for numeric types conversion. 
 ```cpp
 std::is_arithmetic<T>::value || detail::supports_arithmetic_operations<T>::value
 ```
 
-`std::to_integer<>()`: reuse the name `std::to_integer<>(std::byte)`. 
+2. `std::to_integer<>()`: reuse the name `std::to_integer<>(std::byte)`. 
 From `std::byte` to integer is safe except for to `int8_t`. 
 ```cpp
   template<typename _IntegerType>
@@ -237,13 +228,12 @@ It is proposed to modify this `std::to_integer<>(std::byte)` to check for the `i
 
 function naming follows `std::to_string<T>()`
 
-`to_enum<>()` or `enum_cast<>()`
+3. `to_enum<>()` or `enum_cast<>()`
 
 
 ### which standard header those functions should go?
 
-`<stddef>` where `size_t` is defined, if it will not cause circular inclusion.
-`<utility>`
+`<numeric>`
 
 ### Template parameter detection
 The return type must be the first template parameter, which must be specified. The second can be deduced from input parameter type.
@@ -381,10 +371,11 @@ Table 1: tested compiler and platforms by CI, using C++11 compiler
 
 | Platform                      | description | Compiler version | Result |
 | ----------------------------- | ----------- | ---------------- | ------ |
-| MacOS Xcode Travis CI         |             | Apple clang      |        |
+| MacOS Xcode Travis CI         | C++14       | Apple clang      |        |
 | Ubuntu 18.04 64bit  Travis CI | C++17       | G++ 8            |        |
 | Ubuntu 16.04 64bit  Travis CI | C++11       | G++ 5            |        |
-| Windows ?? Appvoyer CI        |             | visual studio    |        |
+| Windows Azure pipeline CI     |  C++14      | visual studio 2015 |        |
+| Windows Azure pipeline CI     | C++17       | visual studio 2019 |        |
 
 Visual studio C++ version macro
 https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=vs-2019

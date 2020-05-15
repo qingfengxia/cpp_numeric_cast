@@ -1,4 +1,6 @@
-[![Build Status](https://travis-ci.org/qingfengxia/cpp_numeric_cast.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_numeric_cast.svg)   [![App Veyor Build status](https://ci.appveyor.com/api/projects/status/lkpn62t55wfie52t?svg=true)](https://ci.appveyor.com/project/qingfengxia/cpp-numeric-cast)[![Build Status](https://dev.azure.com/qingfengxia-github/qingfengxia/_apis/build/status/qingfengxia.cpp_numeric_cast%20(1)?branchName=master)](https://dev.azure.com/qingfengxia-github/qingfengxia/_build/latest?definitionId=2&branchName=master)
+[![Build Status](https://travis-ci.org/qingfengxia/cpp_numeric_cast.svg?branch=master)](https://travis-ci.org/qingfengxia/cpp_numeric_cast.svg)   [![Build Status](https://dev.azure.com/qingfengxia-github/qingfengxia/_apis/build/status/qingfengxia.cpp_numeric_cast%20(1)?branchName=master)](https://dev.azure.com/qingfengxia-github/qingfengxia/_build/latest?definitionId=2&branchName=master)
+
+[![codecov](https://codecov.io/gh/qingfengxia/cpp_numeric_cast/branch/master/graph/badge.svg)](https://codecov.io/gh/qingfengxia/cpp_numeric_cast)
 
 [![Boost Software License][license-badge]](LICENSE.txt)
 
