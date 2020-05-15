@@ -1,5 +1,5 @@
 
-add_executable(demo
+add_executable(demo_numeric_cast
     "demo_numeric_cast.cpp"
 )
 ##set_target_properties(${MyDemo} PROPERTIES OUTPUT_NAME "demo")
@@ -7,9 +7,9 @@ add_executable(demo
 add_executable(demo_mixed_sign
     "demo_mixed_sign.cpp"
 )
-#add_executable(demo_safe_get
-#    "demo_safe_get.cpp"
-#)
+add_executable(demo_safe_get
+    "demo_safe_get.cpp"
+)
 add_executable(demo_has_member
     "demo_has_member.cpp"
 )
@@ -21,7 +21,7 @@ add_executable(demo_explicit
 set(DemoList
     demo_numeric_cast
     demo_mixed_sign
-    #demo_safe_get
+    demo_safe_get
     demo_has_member
     demo_explicit
 )
@@ -31,7 +31,7 @@ set(DemoList
 if(Boost_FOUND AND NOT APPLE)
     message(STATUS "boost lib found with version ${Boost_VERSION}")
     include_directories(${Boost_INCLUDE_DIRS})
-    target_compile_definitions(demo 
+    target_compile_definitions(demo_numeric_cast
         PRIVATE "-DUSE_BOOST_MULTIPRECISION")
     if(EXISTS "${Boost_INCLUDE_DIRS}/boost/safe_numerics")
     #if(Boost_VERSION VERSION_GREATER  1.68)

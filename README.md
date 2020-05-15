@@ -23,8 +23,8 @@ This repository holds code demonstration related safe numerics
 
 ### Consistent runtime safe indexing for STL containers
 
-`at()` or `std::get<>()` for `std::vector<>`
-[]()
+ `std::get<index_value>(ContainerType c)` for `std::vector<>`
+[Proposal: runtime safe getter](proposal_safe_get.md)
 
 ===
 
@@ -33,7 +33,7 @@ This repository holds code demonstration related safe numerics
 ### Big float and big integer
 
 
-### checked arithmetic
+### checked integral arithmetic
 
 
 ### floating point exception
