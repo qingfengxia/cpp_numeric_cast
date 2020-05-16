@@ -93,6 +93,8 @@ namespace detail{
 
 }
 
+    template<class T> using is_numeric = detail::_is_numeric<T>;
+
     /// convert to built-in arithmetic type and half, boost::multiprecision::int128_t
     template <typename T, typename S, 
         typename std::enable_if<std::is_arithmetic<T>::value
