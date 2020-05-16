@@ -21,14 +21,14 @@ TEST_CASE("std::numeric_cast unit test", "[std::numeric_cast]")
     SECTION("std::numeric_cast", "builtin numeric types")
     {
         using namespace std;
-        REQUIRE_THROWS(to_integer<int8_t>(1000) == 0);
-        REQUIRE_THROWS_AS(to_integer<int8_t>(1000) == 0, std::overflow_error);
+        REQUIRE_THROWS(to_integer<int8_t>(1000));
+        REQUIRE_THROWS_AS(to_integer<int8_t>(1000), std::overflow_error);
     }
 
     SECTION("Test user-defined type, half_float::half")
     {
         using namespace half_float;
-        REQUIRE_THROWS_AS(std::numeric_cast<int8_t>(half{1000}) == 0, 
+        REQUIRE_THROWS_AS(std::numeric_cast<int8_t>(half{1000}), 
             std::overflow_error);
     }
 

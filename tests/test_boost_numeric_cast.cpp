@@ -20,8 +20,9 @@ TEST_CASE("boost numeric_cast", "[boost::numeric_cast]")
 
         int8_t v1 = boost::numeric_cast<int8_t>(half{1});
         half h1 = boost::numeric_cast<half>(100);
+        std::cout << "boost::numeric_cast<half>(100) = " << h1 << std::endl;
 
-        REQUIRE_THROWS_AS( boost::numeric_cast<int8_t>(half{1000}) == 0, boost::numeric::bad_numeric_cast);
+        REQUIRE_THROWS_AS( boost::numeric_cast<int8_t>(half{1000}), boost::numeric::bad_numeric_cast);
         // equal expression 
         try{
             int8_t v1 = boost::numeric_cast<int8_t>(half{1000});

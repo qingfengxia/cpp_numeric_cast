@@ -115,8 +115,6 @@ interval<R>
 safe_compare<T, U>
 ```
 
-### Boost `boost::numeric_cast`
-
 ## 3. Rationale
 
 Compiling time `is_narrow_convertible<>` type traits, this is a runtime check.
@@ -179,8 +177,61 @@ Similarly,  floating point computation hardware (FPU) may signal for NAN result.
 
 There are compiler extensions that may be used to generate C++ exceptions automatically whenever a floating-point exception is raised:
 
+## Existing implementation
 
-## use it now:  header-only single file library
+### Boost numeric conversion 
+
+[This header-only library](https://github.com/boostorg/numeric_conversion) dates back to 2001, and it supports more compilers, perhaps through `boost/detail/workaround.hpp`. 
+
+In addition to conversion for int-float, mixed sign, mixed built-in and user-defined types, this lib has advanced features like: `round_policy, overflow_policy and range_checking_policy`. 
+
+[Usage](https://www.boost.org/doc/libs/1_72_0/libs/numeric/conversion/doc/html/boost_numericconversion/improved_numeric_cast__.html):  `unsigned int i=numeric_cast<unsigned int>(f);`,  is identical to the proposed implementation.  If failed, `boost::numeric::bad_numeric_cast`  derived exception will be thrown, it could be `boost::numeric::positive_overflow` or `boost::numeric::negative_overflow`
+
+
+```cpp
+template <typename Target, typename Source> 
+inline Target numeric_cast( Source arg )
+{
+    typedef numeric::conversion_traits<Target, Source>   conv_traits;
+    typedef numeric::numeric_cast_traits<Target, Source> cast_traits;
+    typedef boost::numeric::converter
+        <
+            Target,
+            Source, 
+            conv_traits,
+            typename cast_traits::overflow_policy, 
+            typename cast_traits::rounding_policy, 
+            boost::numeric::raw_converter< conv_traits >,
+            typename cast_traits::range_checking_policy
+        > converter;
+    return converter::convert(arg);
+}
+```
+
+The implementation use on boost MPL. User defined types needs implementation `std::numeric_limits<>`, and more type trait is needed? 
+
+The `float_half::half` has implements `std::numeric_limits<>`, but failed to throw an exception, reason is unknown.
+```
+        REQUIRE_THROWS_AS( boost::numeric_cast<int8_t>(half{1000}) == 0, boost::numeric::bad_numeric_cast);
+```
+
+#### User-defined type support
+
+
+The default rounding policy: 
+
+### Other (mainly limited to integral conversion)
+
+`gsl::narrow` of [GNU Science library]()
+
+`wil::safe_cast` of [Windows Implementation Libraries (WIL)](https://github.com/microsoft/wil/wiki/safe_cast)
+
+## Implementation
+
+
+### Try it now:  header-only single file library
+
+[download numeric_cast.h](./numeric_cast.h)
 
 ```cpp
 #include "numeric_cast.h"
@@ -193,23 +244,23 @@ int i = std::numeric_cast<int>(f());
 
 Boost sign function
 https://www.boost.org/doc/libs/1_73_0/libs/math/doc/html/math_toolkit/sign_functions.html
+ 
+### Single header file (needs C++11)
 
-## Implementation
-
-Header files required:
-`<type_traits> ` to limit source type to convert, so C++11 is a minimum requirement
-`<limits>`  for overflow detection, get the target type min() and `max()`
-`<stdexcept>`  for standard overflow exceptions 
-
-The actual conversion is done by  **static_cast**<>  
+The actual conversion is done by  **static_cast<>**  
 
  **static_cast**,  cast if conversion exists, may and may not have compiler warning
 
  **dynamic_cast**, for safe, runtime-checked casts of pointer-to-base to pointer-to-derived.
 
- The source value will not be modified, this function will always create a new value of the target type.
+The source value will not be modified, this function will always create a new value of the target type.
 
-### Naming
+Header files required:
+`<type_traits> ` to limit source type to convert, so C++11 is a minimum requirement
+`<limits>`  for overflow detection, get the target type `min()` and `max()`
+`<stdexcept>`  for standard overflow exceptions 
+
+### Function naming
 
 1. `std::numeric_cast<>()`, is a general method for numeric types conversion. 
 ```cpp
@@ -353,35 +404,30 @@ An open source version of half implemented has been incorporated into this proje
 
 ### Performance impact
 
-exception overhead is regarded insignificant in C++.
-C++17 `if constexpr ()` may reduce runtime 
+exception overhead is regarded insignificant in modern C++.[ref needed]
 
+C++17 `if constexpr ()` may reduce runtime overhead.
 
-
-inline template function yes!
-
+inline template function, yes!
 
 
 ##  Tested platforms Compiler support
 
 Different OS: LP64 or LLP64 (windows), only 64bit
-CPU architecture, tested only on x86_64
+CPU architecture, tested only on x86_64, but it is possible to test on ARM cpu on one CI system.
 
 Table 1: tested compiler and platforms by CI, using C++11 compiler
 
-| Platform                      | description | Compiler version | Result |
+| Platform                      | Description | Compiler version | Result |
 | ----------------------------- | ----------- | ---------------- | ------ |
 | MacOS Xcode Travis CI         | C++14       | Apple clang      |        |
 | Ubuntu 18.04 64bit  Travis CI | C++17       | G++ 8            |        |
 | Ubuntu 16.04 64bit  Travis CI | C++11       | G++ 5            |        |
-| Windows Azure pipeline CI     |  C++14      | visual studio 2015 |        |
+| Windows Azure pipeline CI     | C++14       | visual studio 2015 |        |
 | Windows Azure pipeline CI     | C++17       | visual studio 2019 |        |
 
 Visual studio C++ version macro
 https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=vs-2019
-
-### Standalone Version
-Sources and Downloads
 
 ## Disclaimer and copyright 
 
