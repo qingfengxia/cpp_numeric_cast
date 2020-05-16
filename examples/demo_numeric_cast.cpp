@@ -79,7 +79,9 @@ void test_half()
 {
     std::cout << "=========" << "half float" << "==============\n";
     using namespace half_float;
-   //static_assert(std::is_arithmetic<half_float::half>::value, "");
+    half h1 = std::numeric_cast<half>(100);
+    static_assert(std::is_numeric<half>::value, "");
+
     int8_t v1 = std::to_integer<int8_t>(half{1});
     try{
         int8_t v1 = std::to_integer<int8_t>(half{1000});

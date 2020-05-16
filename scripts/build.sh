@@ -1,17 +1,25 @@
 #!/bin/sh
 
-source /etc/lsb-release
-echo "build on ${DISTRO_CODENAME}"
+if [ -f /etc/lsb-release ]; then
+    source /etc/lsb-release
+else
+    export DISTRIB_CODENAME="unknown"
+fi
+echo "build on linux distro: ${DISTRIB_CODENAME}"
 
-if [ ${DISTRO_CODENAME} == "focal" ]; then
+if [[ ${DISTRIB_CODENAME} == "focal" ]]; then
     BUILD_DIR=blg
-    # docker run -it -w /repo -v $(pwd):/repo ubuntu_focal bash
-    #cd blg
-    #g++ -std=c++2a -o demo_safe_get -I.. ../examples/demo_safe_get.cpp -Wall -Wextra && ./demo_safe_get
+    # docker run  -ti  -u root -w /work -v $(pwd):/work ubuntu_focal:latest  /bin/bash
+    # CMake on ubuntu focal should have support CMAKE_CXX_STANDARD=20
+    cd $BUILD_DIR
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20
+    cmake --build . --config Debug -- -j $(nproc)
 else
     BUILD_DIR=build
+    cd $BUILD_DIR
+    # for local dev, debug and coverage on
+    cmake .. -DCMAKE_BUILD_TYPE=Debug
+    #make  -j $(nproc)  # this command does not work on Windows
+    cmake --build . -- -j $(nproc)
 fi
 
-cd $BUILD_DIR
-cmake .. -DCMAKE_BUILD_TYPE=Debug
-cmake --build . --config Debug -- -j $(nproc)

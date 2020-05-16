@@ -16,7 +16,7 @@
 
 #include <string>
 
-#if __cplusplus > 201703L
+#if __cplusplus >= 201907L
 // C++ requires clause
 template<class T>
 std::string optionalToString(T* obj)
