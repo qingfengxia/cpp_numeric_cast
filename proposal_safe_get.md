@@ -2,6 +2,12 @@
 
 very early draft for discussion
 
+### Consistent runtime safe indexing for STL containers
+
+ `std::get<index_value>(ContainerType c)` for `std::vector<>`
+[Proposal: runtime safe getter](proposal_safe_get.md)
+
+
 By Qingfeng Xia 2020
 
 ## Motivation

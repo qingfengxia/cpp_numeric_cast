@@ -5,42 +5,96 @@ Audience: Study Group 6 (Numerics), Library Evolution Working Group Incubator
 
 Qingfeng Xia, Copyright 2020
 
+## Abstract 
+A few helper functions to make runtime numeric conversion safer, provided as a header-only library .
 
-## 0. Revision History
 
-## 1. Introduction
-
-Proposed a few helper functions to make numeric conversion safer.
+Compile time check for both built in numeric types and user defined type with `std::numeric_limits` like half float, boost big integer, etc. 
 ```cpp
 
-// type trait for both built in numeric types and user defined type like half float
-is_numeric<T>();
+// this version is a template function 
+bool is_numeric<T>(T instance);
+int a = 1;
+auto b = is_numeric(a);
 
+// type traits to check if built in types and user defined types support std::numeric_cast
+constexpr bool is_numeric<T>::value
+
+```
+
+Runtime safe numeric cast, compatible with `boost::numeric::numeric_cast` but without dependency on other boost library.  Note that `boost::numeric::numeric_cast` is more feature complete with trait and policy. 
+```c++
 // throwable dynamic numeric cast
-numeric_cast()  // a simplified but should works like boost::numeric::numeric_cast
-// note: after the author reinvented the wheel, `boost::numeric::numeric_cast` was found to be more feature complete with trait and policy. 
-
-to_index()  // to size_t
-
-// type traits to check if built in types and user defined types support numeric_cast
-is_numeric<T>::value
+TargetType t = numeric_cast<SourceType>(SourceType s)
 
 // check if the cast may cause runtime error
-bool convertible<TargetType>(SourceType) noexcept
+constexpr bool convertible<TargetType>(SourceType sourceValue) noexcept
 // can  be named as  `is_numeric_convertible()`
 ```
 
+
+
 ```c++
+
+size_t to_index(T input_numeric_value)  // to size_t
+
 // from numeric types to enum with runtime overflow check
 // javascript has only 1 numeric type double, 
 // safe cast from double to C++ enum may be useful
-to_enum()  
+EnumType to_enum<EnumType>()  
 
 ```
 
+
+## 0. Revision History
+
+## 1. Introduction to safe numerics in C++
+
+C++ has played an increasingly important role in high performance computation, but there are some inconvenience or glitches for safe scientific computation.  
+
+### safe unsigned and signed integer comparison 
+
+C++20 has introduced [`std::cmp_<op>`](https://en.cppreference.com/w/cpp/utility/intcmp)  for unsigned and sign integer comparison, to avoid glitch of `-1 > 2UL`
+```
+-1 > 0u; // true
+std::cmp_greater(-1, 0u); // false
+```
+
+NB, floating pointer numbers not be compared by equal sign, but setup a tolerance to compare. see more
+<https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/float_comparison.html>
+
+### safe numeric type casting at runtime
+
+To deal with overflow and underflow at runtime, it can be done by `boost::numeric_cast` and this proposed header-only implementation, there are several other implementations which are elaborated in this proposal. 
+
+### half float and big integer
+
+Boost has template type for big integer types. There is performance penalty to use type other than CPU supported types, of which `int` addition can be completed in one CPU cycle. 
+
+Although half precision floating point has gain popularity, but there is no industrial standard for half floating point yet. 
+
+### checked integral arithmetic overflow
+
+```c++
+int a = INT_MAX - 1;
+int b = 2;
+int a_b = a + b;  // compiler may give warning message
+int sum(int a, int b) { return a + b; };  
+int a_b_1 = sum(a, b);  // no check
+```
+Run this example at <cpp.sh/8uprq>
+
+There is third-party library that can conduct overflow check for each algorithm, or just use big number if overflow is a concern. 
+
+### floating point exception
+
+Depends on compiler setup,  floating point exception may be ignored, but ignore such exception is not acceptable in critical scientific computation.
+
+Compiler options + setup in user program can control which kind of floating point expceptions to ignore or trap,  but different CPU and compiler may have different behavior, there needs a standard.
+
 ## 2. Motivation
 
-1. A portable way to suppress compiler warning on conversion
+1. A portable way to suppress compiler warning on conversion in a safe way.
 
 Conversion from unsigned integer of `size_t` type, returned by STL containers. to signed integer for some arithmetic operation is a common operation, but there is compiler warning. 
 
@@ -131,11 +185,9 @@ https://www.boost.org/doc/libs/1_73_0/libs/safe_numerics/doc/html/index.html
 `IndexType to_index<ContainerType, SourceType>(SourceType v)`
 
 
-```cpp
-typedef boost::numeric::converter<int,double> Double2Int ;
-int x = Double2Int::convert(2.0);
-```
-https://www.boost.org/doc/libs/1_73_0/libs/numeric/conversion/doc/html/index.html
+Boost sign function, is that relevant?
+https://www.boost.org/doc/libs/1_73_0/libs/math/doc/html/math_toolkit/sign_functions.html
+
 
 ### fail-fast: for type conversion, for safety scientific computation.  
 
@@ -189,6 +241,12 @@ In addition to conversion for int-float, mixed sign, mixed built-in and user-def
 
 
 ```cpp
+typedef boost::numeric::converter<int,double> Double2Int ;
+int x = Double2Int::convert(2.0);
+```
+https://www.boost.org/doc/libs/1_73_0/libs/numeric/conversion/doc/html/index.html
+
+```cpp
 template <typename Target, typename Source> 
 inline Target numeric_cast( Source arg )
 {
@@ -212,26 +270,41 @@ The implementation use on boost MPL. User defined types needs implementation `st
 
 The `float_half::half` has implements `std::numeric_limits<>`, but failed to throw an exception, reason is unknown.
 ```
-        REQUIRE_THROWS_AS( boost::numeric_cast<int8_t>(half{1000}) == 0, boost::numeric::bad_numeric_cast);
+REQUIRE_THROWS_AS( boost::numeric_cast<int8_t>(half{1000}) == 0, boost::numeric::bad_numeric_cast);
 ```
 
 #### User-defined type support
-
 
 The default rounding policy: 
 
 ### Other (mainly limited to integral conversion)
 
-`gsl::narrow` of [GNU Science library]()
+`gsl::narrow` of [guideline](https://github.com/microsoft/GSL/blob/master/include/gsl/gsl_util)
+
+```c++
+// narrow_cast(): a searchable way to do narrowing casts of values
+template <class T, class U>
+GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
+constexpr T narrow_cast(U&& u) noexcept
+{
+    return static_cast<T>(std::forward<U>(u));
+}
+```
+
 
 `wil::safe_cast` of [Windows Implementation Libraries (WIL)](https://github.com/microsoft/wil/wiki/safe_cast)
 
 ## Implementation
 
 
-### Try it now:  header-only single file library
+### Try it now:  c++11 header-only single file library
 
 [download numeric_cast.h](./numeric_cast.h)
+
+STL Header files required:
+`<type_traits> ` to limit source type to convert, so C++11 is a minimum requirement
+`<limits>`  for overflow detection, get the target type `min()` and `max()`
+`<stdexcept>`  for standard overflow exceptions 
 
 ```cpp
 #include "numeric_cast.h"
@@ -242,9 +315,7 @@ int i = std::numeric_cast<int>(f());
 
 ```
 
-Boost sign function
-https://www.boost.org/doc/libs/1_73_0/libs/math/doc/html/math_toolkit/sign_functions.html
- 
+
 ### Single header file (needs C++11)
 
 The actual conversion is done by  **static_cast<>**  
@@ -255,10 +326,9 @@ The actual conversion is done by  **static_cast<>**
 
 The source value will not be modified, this function will always create a new value of the target type.
 
-Header files required:
-`<type_traits> ` to limit source type to convert, so C++11 is a minimum requirement
-`<limits>`  for overflow detection, get the target type `min()` and `max()`
-`<stdexcept>`  for standard overflow exceptions 
+### Todo:  round_policy
+https://en.cppreference.com/w/cpp/numeric/math/floor
+
 
 ### Function naming
 
@@ -282,9 +352,7 @@ function naming follows `std::to_string<T>()`
 3. `to_enum<>()` or `enum_cast<>()`
 
 
-### which standard header those functions should go?
-
-`<numeric>`
+### which standard header those functions should go?   `<numeric>`
 
 ### Template parameter detection
 The return type must be the first template parameter, which must be specified. The second can be deduced from input parameter type.
