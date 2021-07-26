@@ -16,6 +16,15 @@ This repository holds code demonstration related safe numerics
 ## Proposals
 ### Runtime safe `numeric_cast`
 
+usage:
+```c++
+long l = INT_MAX + (long)1;
+int i = numeric_cast<>(1);  // this will throw overflow exception!
+auto b = is_convertable<int>(l);  // gives false, let you test overflow without using C++ exception
+
+is_numeric<T>::value  // can be used as in template, inside std::enable_if<>
+```
+
 [proposal: numeric_cast](proposal_numeric_cast.md)
 
 ### Reuse keyword `explicit` to prevent implicit conversion of function parameter
